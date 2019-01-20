@@ -9,40 +9,46 @@ Two main `io.Readers` are provided. `ReadFrame` will provide a full FFXIV frame,
 for debugging. `ReadMessage` will read a full IPC, however it's up to the user to decode the IPC. It's
 worth noting than `ReadMessage` will call `ReadFrame` as required, as it builds upon reassembled frames.
 
-Additionally, users can pull a single TCP packet and optionally extract any frames from it using the
-`Framer` package. Since this doesn't require TCP reassembly, it's possible to be missing data, however
-this can be useful for dealing with retransmit and protocol rubberbanding.
+`Messages()` will pull individual Messages out of a Frame, while ReadMessage is an `io.Reader` for
+ingesting Messages into a buffer. `GetMessage()` does the same thing, but for a single Message instead
+of an array.
 
 
 ## Example
 
 ```Go
 import (
+	"bufio"
 	"fmt"
 	"io"
 
-	"github.com/ayyaruq/ayct"
+	"github.com/ayyaruq/zanarkand"
 )
 
 func main() {
-	s := ayct.Sniffer{ server: 'Yojimbo' }
-	f := ayct.Framer{ sniffer: s }
+	s := zanarkand.Sniffer{ server: 'Yojimbo' }
+	buf := bufio.NewReader(&s.r)
 
 	defer s.Close()
 
-	s.Start()
+	s.Run()
 
 	// Print a frame metadata
-	frame := f.ReadFrame()
-	fmt.Println(frame.ToString())
+	frame, err := zanarkand.ReadFrame(buf)
+	if err == io.EOF {
+		// Read unntil EOF
+		return
+	} else if err != nil {
+		log.Println("Error reading stream", err)
+	} else {
+		fmt.Println(frame.ToString())
+		s.Stop()
+	}
 
-	// Print a message header
-	message := f.ReadMessage()
-	fmt.Println(message.ToString())
+	// Print some message headers
+	for _, message := range frame.Data.Messages() {
+		fmt.Println(message.ToString())
+	}
 
-	// Use an io.Reader
-	// TODO
-
-	s.Stop()
 }
 ```
