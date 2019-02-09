@@ -5,50 +5,54 @@ additionally handle TCP reassembly and provides an interface for IPC frame decod
 
 For Windows users, elevated security privileges are required, as well as a local firewall exemption.
 
-Two main `io.Readers` are provided. `ReadFrame` will provide a full FFXIV frame, and is mostly useful
-for debugging. `ReadMessage` will read a full IPC, however it's up to the user to decode the IPC. It's
-worth noting than `ReadMessage` will call `ReadFrame` as required, as it builds upon reassembled frames.
-
-`Messages()` will pull individual Messages out of a Frame, while ReadMessage is an `io.Reader` for
-ingesting Messages into a buffer. `GetMessage()` does the same thing, but for a single Message instead
-of an array.
+To use the library, you need to instantiate a Sniffer and then loop NextFrame in it once it starts.
+For each Frame, you can then iterate Messages in it. Helper methods are available to filter Segment
+and Opcodes from Frames and Messages respectively. The Sniffer can be stopped and restarted at any time.
 
 
 ## Example
 
 ```Go
 import (
-	"bufio"
 	"fmt"
-	"io"
+	"log"
 
 	"github.com/ayyaruq/zanarkand"
 )
 
 func main() {
-	s := zanarkand.Sniffer{ server: 'Yojimbo' }
-	buf := bufio.NewReader(&s.r)
-
-	defer s.Close()
-
-	s.Run()
-
-	// Print a frame metadata
-	frame, err := zanarkand.ReadFrame(buf)
-	if err == io.EOF {
-		// Read unntil EOF
-		return
-	} else if err != nil {
-		log.Println("Error reading stream", err)
-	} else {
-		fmt.Println(frame.ToString())
-		s.Stop()
+	// Setup the Sniffer
+	sniffer, err := zanarkand.NewSniffer("", "en0")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// Print some message headers
-	for _, message := range frame.Data.Messages() {
-		fmt.Println(message.ToString())
+	// Start the Sniffer
+	sniffer.Start()
+
+	for i := 0, i < 10; i++ {
+		frame, err := sniffer.NextFrame()
+		if err != nil {
+			log.Print(err)
+		}
+
+		// Print the Message Headers
+		for _, message := range frame.Messages {
+			fmt.Println(message.Header.ToString())
+		}
 	}
 
+	sniffer.Stop()
 }
 ```
+
+
+## TODO
+- [ ] examples
+- [ ] some interface methods for easier access and extraction
+- [ ] tests
+- [ ] updated opcode registry
+- [ ] type deserialisation?
+- [ ] support fragmented Frames (when a Message spans 2 Frames)
+- [ ] other Segment types (currently only IPC seg 3 is implemented)
+- [ ] io.Reader into user Buffer, but this is a huge pain
