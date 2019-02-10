@@ -118,7 +118,7 @@ func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
 		return nil, fmt.Errorf("Unabe to open capture handle: %s", err)
 	}
 
-	err = handle.SetBPFFilter("tcp port 54992-54994 or tcp port 55006-55007 or tcp port 55021-55040 or tcp port 55296-55551")
+	err = handle.SetBPFFilter("tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551")
 	if err != nil {
 		return nil, fmt.Errorf("Unable to setup BPF filter: %s", err)
 	}
