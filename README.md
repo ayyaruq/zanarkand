@@ -14,6 +14,7 @@ and Opcodes from Frames and Messages respectively. The Sniffer can be stopped an
 
 ```Go
 import (
+	"flag"
 	"fmt"
 	"log"
 
@@ -21,14 +22,17 @@ import (
 )
 
 func main() {
+	// Open flags for debugging if wanted (-assembly_debug_log)
+	flag.Parse()
+
 	// Setup the Sniffer
 	sniffer, err := zanarkand.NewSniffer("", "en0")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Start the Sniffer
-	sniffer.Start()
+	// Start the Sniffer goroutine
+	go sniffer.Start()
 
 	for i := 0, i < 10; i++ {
 		frame, err := sniffer.NextFrame()
