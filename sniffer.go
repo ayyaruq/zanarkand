@@ -3,6 +3,7 @@ package zanarkand
 import (
 	"bufio"
 	"encoding/binary"
+	"errors"
 	"fmt"
 
 	"github.com/google/gopacket"
@@ -13,7 +14,7 @@ import (
 )
 
 // reassembledChan is a byte channel to receive the length of a full frame
-var reassembledChan chan []byte
+var reassembledChan = make(chan []byte)
 
 // tcpStreamFactory implements tcpassembly.StreamFactory.
 type frameStreamFactory struct{}
@@ -99,6 +100,8 @@ func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
 	streamFactory := new(frameStreamFactory)
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
+	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 16
+	assembler.AssemblerOptions.MaxBufferedPagesTotal = 16
 
 	// Setup state tracker
 	stateController := make(chan bool, 1)
@@ -110,8 +113,10 @@ func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
 
 	if fileName != "" {
 		handle, err = pcap.OpenOffline(fileName)
-	} else {
+	} else if ifDevice != "" {
 		handle, err = pcap.OpenLive(ifDevice, 1600, true, pcap.BlockForever)
+	} else {
+		return nil, errors.New("capture handle: no device or file provided")
 	}
 
 	if err != nil {
@@ -230,7 +235,7 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 
 		// Sanity check
 		if segment.Reserved != messageReservedMagic {
-			return frame, fmt.Errorf("Message magic mismatch! %d is not: %d", segment.Reserved, messageReservedMagic)
+			return frame, fmt.Errorf("Message magic mismatch! %X is not: %X", segment.Reserved, messageReservedMagic)
 		}
 
 		// Init our message

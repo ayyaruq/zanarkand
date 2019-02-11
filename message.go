@@ -7,7 +7,7 @@ import (
 )
 
 var messageHeaderLength = 32
-var messageReservedMagic uint16 = 0x1400
+var messageReservedMagic uint16 = 0x0014
 
 // Segment types are as follows:
 // Lobby client/server session handshake: 1+2
