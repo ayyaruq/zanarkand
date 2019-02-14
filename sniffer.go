@@ -229,8 +229,8 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 
 		// Do we have a full Message?
 		length := segment.Header.Length
-		if int(length) > len(payload) {
-			return frame, fmt.Errorf("Message is %d bytes larger than available in Frame", int(length)-len(payload))
+		if int(offset+length) > len(payload) {
+			return frame, fmt.Errorf("Message is %d bytes larger than available in Frame", int(offset+length)-len(payload))
 		}
 
 		// Sanity check
@@ -241,7 +241,7 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 		// Init our message
 		message := Message{}
 		message.Header = segment
-		message.Body = payload[offset:length]
+		message.Body = payload[offset : offset+length]
 
 		// Bump offset for next Message
 		offset += length
