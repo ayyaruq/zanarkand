@@ -14,7 +14,7 @@ import (
 )
 
 // reassembledChan is a byte channel to receive the length of a full frame
-var reassembledChan = make(chan []byte)
+var reassembledChan = make(chan []byte, 200)
 
 // tcpStreamFactory implements tcpassembly.StreamFactory.
 type frameStreamFactory struct{}
