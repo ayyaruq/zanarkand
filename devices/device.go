@@ -51,21 +51,27 @@ func ListDeviceNames(printDescription bool, printIP bool) ([]string, error) {
 	return list, nil
 }
 
-func FindDeviceName(name string) (string, error) {
+// FindDeviceByName returns the device with the provided name.
+func FindDeviceByName(name string) (string, error) {
 	if name == "" {
 		// RIP non-Linux
 		return "any", nil
 	}
 
+	device := ""
+
 	if index, err := strconv.Atoi(name); err == nil {
 		devices, err := ListDeviceNames(false, false)
 		if err != nil {
-			return "", fmt.Errorf("Error building device list: %s, err")
+			return "", fmt.Errorf("Error building device list: %s", err)
 		}
 
 		if index >= len(devices) {
 			return "", fmt.Errorf("Device index %d/%d out of bounds for device list", index, len(devices))
 		}
 
-		return devices[index], nil
+		device = devices[index]
+	}
+
+	return device, nil
 }
