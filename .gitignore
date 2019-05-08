@@ -11,5 +11,9 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# Go dependency crap
+/vendor/
+/Godeps/
+
 # Debugging objects
 *.pcap

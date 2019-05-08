@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/tsg/gopacket/pcap"
+	"github.com/google/gopacket/pcap"
 )
 
 var deviceAnySupported = runtime.GOOS == "linux"
