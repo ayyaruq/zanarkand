@@ -28,7 +28,7 @@ type FrameHeader struct {
 // Frame is an FFXIV bundled message encapsulation layer.
 type Frame struct {
 	Header   FrameHeader
-	Messages []Message
+	Messages []RawMessage
 }
 
 // ToMap provides a hash representation of a frame header.

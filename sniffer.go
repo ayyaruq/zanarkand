@@ -191,6 +191,7 @@ func (s *Sniffer) Stop() int {
 
 	// Set state condition for Active()
 	s.state = <-s.stateNotifier
+	fmt.Println("stopping")
 
 	return closed
 }
@@ -228,18 +229,19 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 		segment := buildMessageHeader(payload[offset:])
 
 		// Do we have a full Message?
-		length := segment.Header.Length
+		length := segment.GetLength()
 		if int(offset+length) > len(payload) {
 			return frame, fmt.Errorf("Message is %d bytes larger than available in Frame", int(offset+length)-len(payload))
 		}
 
-		// Sanity check
-		if segment.Reserved != messageReservedMagic {
-			return frame, fmt.Errorf("Message magic mismatch! %X is not: %X", segment.Reserved, messageReservedMagic)
-		}
+		// Fast forward the offset to body and prune the header from the length
+		// TODO: this is fucking retarded,
+		// just do payload[offset+messageHeaderLength : offet+payload] and append it later
+		offset += uint32(messageHeaderLength)
+		length -= uint32(messageHeaderLength)
 
 		// Init our message
-		message := Message{}
+		message := RawMessage{}
 		message.Header = segment
 		message.Body = payload[offset : offset+length]
 
