@@ -1,0 +1,5 @@
+{
+    "go.formatTool": "goimports",
+    "go.useLanguageServer": true,
+    "editor.tabSize": 2
+}
