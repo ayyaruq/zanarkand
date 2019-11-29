@@ -1,13 +1,13 @@
 package zanarkand
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"time"
 )
 
-var messageHeaderLength = 32
-var messageReservedMagic uint16 = 0x0014
+var gameEventMessageHeaderLength = 32
 
 // Segment types separate messages into their relevant field maps.
 // Session/Encryption types are not implemented due to them largely only
@@ -27,165 +27,141 @@ const (
 	EncryptRecv = 10
 )
 
-// MessageHeader provides the metadata for an FFXIV IPC.
-// Bytes 14:15 are padding.
+// GenericMessage is an interface for other Message types to make the Framer generic.
+type GenericMessage interface {
+	IsMessage()
+}
+
+// GenericHeader provides the metadata for an FFXIV IPC.
+// 0:16 provide the generic header, other types have additional header fields.
 // Data pulled from Sapphire's `Network/CommonNetwork.h`
-type MessageHeader interface {
-	GetLength() uint32
-	GetSource() uint32
-	GetTarget() uint32
-	GetSegment() uint16
-	String() string
-	ToMap() map[string]interface{}
+type GenericHeader struct {
+	Length      uint32 // [0:4] - always 0x18 (24: 32 for header minus 4 for Length field)
+	SourceActor uint32 // [4:8] - always 0
+	TargetActor uint32 // [8:12] - always 0
+	Segment     uint16 // [12:14] - 7 or 8
+	padding     uint16 // [14:16]
 }
 
-// RawMessage is a generic FFXIV IPC container.
-type RawMessage struct {
-	Header MessageHeader
-	Body   []byte
-}
+// Decode a GenericHeader from a byte array.
+func (m *GenericHeader) Decode(r *bufio.Reader) error {
+	data, err := r.Peek(16)
+	lengthBytes := len(data)
 
-func buildMessageHeader(p []byte) MessageHeader {
-	// Build the Message Headers
-	segment := SegmentHeader{}
-	segment.Length = binary.LittleEndian.Uint32(p[0:4])
-	segment.SourceActor = binary.LittleEndian.Uint32(p[4:8])
-	segment.TargetActor = binary.LittleEndian.Uint32(p[8:12])
-	segment.SegmentType = binary.LittleEndian.Uint16(p[12:14])
-
-	// Are we in a Game IPC?
-	switch segment.SegmentType {
-	case GameEvent:
-		header := GameEventHeader{SegmentHeader: segment}
-		header.buildMessageHeader(p)
-		return header
-	default:
-		return segment
+	if err != nil || lengthBytes < 16 {
+		return fmt.Errorf("not enough data: expected at least 16 bytes, got %d", lengthBytes)
 	}
+
+	m.Length = binary.LittleEndian.Uint32(data[0:4])
+	m.SourceActor = binary.LittleEndian.Uint32(data[4:8])
+	m.TargetActor = binary.LittleEndian.Uint32(data[8:12])
+	m.Segment = binary.LittleEndian.Uint16(data[12:14])
+	m.padding = binary.LittleEndian.Uint16(data[14:16])
+
+	return nil
 }
 
-// Length returns the length of the Message payload.
-func (m *RawMessage) Length() uint32 {
-	return m.Header.GetLength()
-}
-
-// Segment returns the Segment ID for the Message.
-func (m *RawMessage) Segment() uint16 {
-	return m.Header.GetSegment()
-}
-
-// Source returns the Message source actor ID.
-func (m *RawMessage) Source() uint32 {
-	return m.Header.GetSource()
-}
-
-// Target returns the Message target actor ID.
-func (m *RawMessage) Target() uint32 {
-	return m.Header.GetTarget()
-}
-
-/* Methods for Segment Headers */
-
-// SegmentHeader is a generic header that all segments have
-type SegmentHeader struct {
-	Length      uint32 // [0:3] - always 0x18 (24)
-	SourceActor uint32 // [4:7] - always 0
-	TargetActor uint32 // [8:11] - always 0
-	SegmentType uint16 // [12:13] - 7 or 8
-	padding     uint16 // [14:15]
-}
-
-// GetLength returns the Segment length.
-func (h SegmentHeader) GetLength() uint32 {
-	return h.Length
-}
-
-// GetSegment returns the Segment type.
-func (h SegmentHeader) GetSegment() uint16 {
-	return h.SegmentType
-}
-
-// GetSource returns the source actor for the message.
-func (h SegmentHeader) GetSource() uint32 {
-	return h.SourceActor
-}
-
-// GetTarget returns the target actor for the message.
-func (h SegmentHeader) GetTarget() uint32 {
-	return h.TargetActor
-}
-
-// String presents a message header in a string format.
-func (h SegmentHeader) String() string {
+// String is a stringer for the GenericHeader of a Message.
+func (m *GenericHeader) String() string {
 	return fmt.Sprintf("Segment - length: %d, source: %d, target: %d, segment: %d\n",
-		h.Length, h.SourceActor, h.TargetActor, h.SegmentType)
+		m.Length, m.SourceActor, m.TargetActor, m.Segment)
 }
 
-// ToMap presents a message header as a hash.
-func (h SegmentHeader) ToMap() map[string]interface{} {
-	data := make(map[string]interface{})
-
-	data["length"] = h.Length
-	data["source"] = h.SourceActor
-	data["target"] = h.TargetActor
-	data["segment"] = h.SegmentType
-
-	return data
+// GameEventMessage is a pre-type casted GameEventHeader and body.
+type GameEventMessage struct {
+	GenericHeader
+	reserved  uint16    // [16:18] - always 0x1400
+	Opcode    uint16    // [18:20] - message context identifier, the "opcode"
+	padding2  uint16    // [20:22]
+	ServerID  uint16    // [22:24]
+	Timestamp time.Time // [24:28]
+	padding3  uint32    // [28:32]
+	Body      []byte
 }
 
-/* Methods for IPC Messages */
+// IsMessage confirms a GameEventMessage is a Message.
+func (GameEventMessage) IsMessage() {}
 
-// GameEventHeader is a sub-header for the data block of a GameEvent Message
-// Bytes [20:21], [28:31] are padding
-// Data pulled from Sapphire's `Network/CommonNetwork.h`
-type GameEventHeader struct {
-	SegmentHeader
-	Reserved  uint16    // [16:17] - always 0x1400
-	Opcode    uint16    // [18:19] - message context identifier, the "opcode"
-	ServerID  uint16    // [22:23]
-	Timestamp time.Time // [24:27]
-}
+// Decode turns a byte payload into a real GameEventMessage.
+func (m *GameEventMessage) Decode(r *bufio.Reader) error {
+	header := GenericHeader{}
+	err := header.Decode(r)
+	if err != nil {
+		return err
+	}
 
-func (h *GameEventHeader) buildMessageHeader(p []byte) {
-	h.Reserved = binary.LittleEndian.Uint16(p[16:18])
-	h.Opcode = binary.LittleEndian.Uint16(p[18:20])
-	h.ServerID = binary.LittleEndian.Uint16(p[22:24])
-	h.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(p[24:28])), 0)
-}
+	length := header.Length
+	data, err := r.Peek(int(length))
+	lengthBytes := len(data)
 
-// GetLength prints the length of the payload.
-func (h GameEventHeader) GetLength() uint32 {
-	return h.Length
-}
+	if err != nil {
+		return fmt.Errorf("not enough data: expected %d bytes, got %d", length, lengthBytes)
+	}
 
-// GetSegment returns the Segment type for the message.
-func (h GameEventHeader) GetSegment() uint16 {
-	return h.SegmentType
-}
+	if int(header.Length) < gameEventMessageHeaderLength {
+		fmt.Errorf("not enough data: expected at least %d bytes, got %d", gameEventMessageHeaderLength, lengthBytes)
+	}
 
-// GetSource returns the source actor for the message.
-func (h GameEventHeader) GetSource() uint32 {
-	return h.SourceActor
-}
+	defer func() {
+		// Regardless of what we read, the buffer is treated like we got everything
+		_, _ = r.Discard(lengthBytes)
+	}()
 
-// GetTarget returns the target actor for the message.
-func (h GameEventHeader) GetTarget() uint32 {
-	return h.TargetActor
+	m.GenericHeader = header
+	m.reserved = binary.LittleEndian.Uint16(data[16:18])
+	m.Opcode = binary.LittleEndian.Uint16(data[18:20])
+	m.ServerID = binary.LittleEndian.Uint16(data[22:24])
+	m.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(data[24:28])), 0)
+	m.Body = data[gameEventMessageHeaderLength:length]
+
+	return nil
 }
 
 // String prints a Segment and IPC Message specific headers.
-func (h GameEventHeader) String() string {
-	segment := h.SegmentHeader.String()
-	return fmt.Sprintf(segment+"Message - server: %v, opcode: 0x%X, timestamp: %v\n", h.ServerID, h.Opcode, h.Timestamp)
+func (m GameEventMessage) String() string {
+	return fmt.Sprintf(m.GenericHeader.String()+"Message - server: %v, opcode: 0x%X, timestamp: %v\n",
+		m.ServerID, m.Opcode, m.Timestamp)
 }
 
-// ToMap returns a map of Segment and IPC Message specific headers.
-func (h GameEventHeader) ToMap() map[string]interface{} {
-	data := h.SegmentHeader.ToMap()
+// KeepaliveMessage is a representation of ping/pong requests.
+type KeepaliveMessage struct {
+	GenericHeader
+	ID        uint32    // [16:19]
+	Timestamp time.Time // [20:23]
+}
 
-	data["opcode"] = h.Opcode
-	data["server"] = h.ServerID
-	data["timestamp"] = h.Timestamp
+// IsMessage confirms a KeepaliveMessage is a Message.
+func (KeepaliveMessage) IsMessage() {}
 
-	return data
+// Decode turns a byte payload into a real KeepaliveMessage.
+func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
+	header := GenericHeader{}
+	err := header.Decode(r)
+	if err != nil {
+		return err
+	}
+
+	length := header.Length
+	data, err := r.Peek(int(length))
+	lengthBytes := len(data)
+
+	if err != nil {
+		return fmt.Errorf("not enough data: expected %d bytes, got %d", length, lengthBytes)
+	}
+
+	defer func() {
+		// Regardless of what we read, the buffer is treated like we got everything
+		_, _ = r.Discard(lengthBytes)
+	}()
+
+	m.GenericHeader = header
+	m.ID = binary.LittleEndian.Uint32(data[16:20])
+	m.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(data[20:24])), 0)
+
+	return nil
+}
+
+// String prints the Segment header and Keepalive Message.
+func (m *KeepaliveMessage) String() string {
+	return fmt.Sprintf(m.GenericHeader.String()+"Message - ID: %d, timestamp: %v\n", m.ID, m.Timestamp)
 }

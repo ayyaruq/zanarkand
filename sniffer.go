@@ -2,6 +2,8 @@ package zanarkand
 
 import (
 	"bufio"
+	"bytes"
+	"compress/zlib"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -16,10 +18,10 @@ import (
 // reassembledChan is a byte channel to receive the length of a full frame
 var reassembledChan = make(chan []byte, 200)
 
-// tcpStreamFactory implements tcpassembly.StreamFactory.
+// frameStreamFactory implements tcpassembly.StreamFactory.
 type frameStreamFactory struct{}
 
-// tcpStream handles decoding TCP packets
+// frameStream handles decoding TCP packets
 type frameStream struct {
 	net, transport gopacket.Flow
 	r              tcpreader.ReaderStream
@@ -27,17 +29,17 @@ type frameStream struct {
 
 // New implements StreamFactory.New(), acting as a Factory for each new Flow.
 func (f *frameStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
-	fStream := &frameStream{
+	fs := &frameStream{
 		net:       net,
 		transport: transport,
 		r:         tcpreader.NewReaderStream(),
 	}
 
 	// Start the Stream or prepare to clench.
-	go fStream.run()
+	go fs.run()
 
 	// ReaderStream implements tcpassembly.Stream so return a pointer to it.
-	return &fStream.r
+	return &fs.r
 }
 
 // Run the stream, quickly.
@@ -152,6 +154,10 @@ func (s *Sniffer) Start() {
 
 	for {
 		select {
+		case <-s.active:
+			s.stateNotifier <- false
+			return
+
 		default:
 			packet, err = s.Source.NextPacket()
 
@@ -172,12 +178,7 @@ func (s *Sniffer) Start() {
 
 			tcp := packet.TransportLayer().(*layers.TCP)
 			s.assembler.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
-
-		case <-s.active:
-			s.stateNotifier <- false
-			return
 		}
-
 	}
 }
 
@@ -206,50 +207,65 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 	data := <-reassembledChan
 
 	// Setup our Frame
-	header := buildFrameHeader(data)
-
-	if int(header.Length) != len(data) {
-		return nil, fmt.Errorf("Data length %d does not match Frame header length %d", len(data), header.Length)
-	}
-
-	// Collect the payload
-	payload, err := header.buildFrameData(data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create our base Frame
 	frame := new(Frame)
-	frame.Header = header
 
-	// Set the data offset
-	var offset uint32
+	frame.Decode(data)
 
-	for i := 0; i < int(header.Count); i++ {
-		segment := buildMessageHeader(payload[offset:])
-
-		// Do we have a full Message?
-		length := segment.GetLength()
-		if int(offset+length) > len(payload) {
-			return frame, fmt.Errorf("Message is %d bytes larger than available in Frame", int(offset+length)-len(payload))
-		}
-
-		// Fast forward the offset to body and prune the header from the length
-		// TODO: this is fucking retarded,
-		// just do payload[offset+messageHeaderLength : offet+payload] and append it later
-		offset += uint32(messageHeaderLength)
-		length -= uint32(messageHeaderLength)
-
-		// Init our message
-		message := RawMessage{}
-		message.Header = segment
-		message.Body = payload[offset : offset+length]
-
-		// Bump offset for next Message
-		offset += length
-
-		frame.Messages = append(frame.Messages, message)
+	if int(frame.Length) != len(data) {
+		return nil, fmt.Errorf("Data length %d does not match Frame header length %d", len(data), frame.Length)
 	}
 
 	return frame, nil
+}
+
+// Subscribe to messages of a given Segment type.
+func (s *Sniffer) Subscribe(channel chan GenericMessage, segment uint16) error {
+	if !s.Active() {
+		go s.Start()
+	}
+
+	for {
+		frame, err := s.NextFrame()
+		if err != nil {
+			return fmt.Errorf("error retrieving next frame: %s", err)
+		}
+
+		// Setup our Message reader
+		r := bufio.NewReader(bytes.NewReader(frame.Body))
+		if frame.Compressed {
+			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
+			if err != nil {
+				return fmt.Errorf("error creating ZLIB decoder: %s", err)
+			}
+
+			defer z.Close()
+
+			r.Reset(z)
+		}
+
+		for i := 0; i < int(frame.Count); i++ {
+			header := new(GenericHeader)
+			err := header.Decode(r)
+			if err != nil {
+				return fmt.Errorf("error decoding message header: %s", err)
+			}
+
+			if header.Segment == segment {
+				switch segment {
+				case GameEvent:
+					typedMessage := new(GameEventMessage)
+					typedMessage.Decode(r)
+
+					channel <- typedMessage
+
+				case ServerPing:
+				case ServerPong:
+					typedMessage := new(KeepaliveMessage)
+					typedMessage.Decode(r)
+
+					channel <- typedMessage
+				}
+			}
+		}
+	}
 }
