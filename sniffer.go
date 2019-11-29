@@ -268,4 +268,6 @@ func (s *Sniffer) Subscribe(channel chan GenericMessage, segment uint16) error {
 			}
 		}
 	}
+
+	return nil
 }
