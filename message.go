@@ -29,7 +29,9 @@ const (
 
 // GenericMessage is an interface for other Message types to make the Framer generic.
 type GenericMessage interface {
+	Decode(*bufio.Reader) error
 	IsMessage()
+	String() string
 }
 
 // GenericHeader provides the metadata for an FFXIV IPC.
@@ -99,7 +101,7 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 	}
 
 	if int(header.Length) < gameEventMessageHeaderLength {
-		fmt.Errorf("not enough data: expected at least %d bytes, got %d", gameEventMessageHeaderLength, lengthBytes)
+		return fmt.Errorf("not enough data: expected at least %d bytes, got %d", gameEventMessageHeaderLength, lengthBytes)
 	}
 
 	defer func() {
