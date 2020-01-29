@@ -1,4 +1,4 @@
-package device
+package devices
 
 import (
 	"fmt"
@@ -54,8 +54,11 @@ func ListDeviceNames(printDescription bool, printIP bool) ([]string, error) {
 // FindDeviceByName returns the device with the provided name.
 func FindDeviceByName(name string) (string, error) {
 	if name == "" {
-		// RIP non-Linux
-		return "any", nil
+		if deviceAnySupported {
+			return "any", nil
+		} else {
+			return "", fmt.Errorf("No device name given")
+		}
 	}
 
 	device := ""
