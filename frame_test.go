@@ -34,10 +34,7 @@ var zlibFrameTestBlob = append(headerTestBlob[:], zlibBodyTestBlob[:]...)
 
 func TestDecode(t *testing.T) {
 	frame := new(Frame)
-	err := frame.Decode(zlibFrameTestBlob)
-	if err != nil {
-		t.Fatalf("Something catastrophic happened: %v", err)
-	}
+	frame.Decode(zlibFrameTestBlob)
 
 	if frame.Length != 92 {
 		t.Errorf("Expected frame length 92, got %v", frame.Length)

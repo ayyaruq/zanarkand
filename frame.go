@@ -26,7 +26,7 @@ type Frame struct {
 }
 
 // Decode a frame from byte data
-func (f *Frame) Decode(p []byte) error {
+func (f *Frame) Decode(p []byte) {
 	// Keep the magic alive
 	f.Magic = binary.LittleEndian.Uint64(p[0:8])
 
@@ -41,8 +41,6 @@ func (f *Frame) Decode(p []byte) error {
 	f.Count = binary.LittleEndian.Uint16(p[30:32])
 
 	f.Body = p[frameHeaderLength:f.Length]
-
-	return nil
 }
 
 // String provides a string representation of a frame header.
