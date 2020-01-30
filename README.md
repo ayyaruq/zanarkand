@@ -31,22 +31,24 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Start the Sniffer goroutine
-	go sniffer.Start()
+	// Create a channel to receive Messages on
+	subscriber := zanarkand.NewGameEventSubscriber()
+
+	// Don't block the Sniffer, but capture errors
+	go func() {
+		err := subscriber.Subscribe(sniffer)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	for i := 0, i < 10; i++ {
-		frame, err := sniffer.NextFrame()
-		if err != nil {
-			log.Print(err)
-		}
-
-		// Print the Message Headers
-		for _, message := range frame.Messages {
-			fmt.Println(message.Header.ToString())
-		}
+		message := <-subscriber.Events
+		fmt.Println(message.String())
 	}
 
 	sniffer.Stop()
+	subscriber.Events.Close()
 }
 ```
 
