@@ -4,7 +4,6 @@
 [![GitHub License](https://img.shields.io/github/license/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/blob/master/LICENSE)
 ![Programming Language](https://img.shields.io/github/languages/top/ayyaruq/zanarkand)
 [![Dependencies](https://img.shields.io/librariesio/github/ayyaruq/zanarkand)](https://libraries.io/github/ayyaruq/zanarkand)
-
 [![GitHub Issues](https://img.shields.io/github/issues/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/pulls)
 [![Discord](https://img.shields.io/discord/479945159203880960?color=blue&label=Discord)](https://discord.gg/fwUwjB5)
