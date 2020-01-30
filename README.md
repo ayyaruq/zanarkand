@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/github/workflow/status/ayyaruq/zanarkand/Go%20Test)](https://github.com/ayyaruq/zanarkand/actions)
 [![GitHub License](https://img.shields.io/github/license/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/blob/master/LICENSE)
-[![Programming Language](https://img.shields.io/github/languages/top/ayyaruq/zanarkand)]
+![Programming Language](https://img.shields.io/github/languages/top/ayyaruq/zanarkand)
 [![Dependencies](https://img.shields.io/librariesio/github/ayyaruq/zanarkand)](https://libraries.io/github/ayyaruq/zanarkand)
 
 [![GitHub Issues](https://img.shields.io/github/issues/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/issues)
