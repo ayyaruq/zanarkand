@@ -6,7 +6,7 @@
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/pulls)
 [![GitHub License](https://img.shields.io/github/license/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/blob/master/LICENSE)
 ![Programming Language](https://img.shields.io/github/languages/top/ayyaruq/zanarkand)
-[![Discord](https://img.shields.io/discord/479945159203880960?color=blue&label=Discord)](https://discord.gg/fwUwjB5)
+[![Discord](https://img.shields.io/discord/479945159203880960?color=orange&label=discord)](https://discord.gg/fwUwjB5)
 
 Zanarkand is a library to read FFXIV network traffic from PCAP, AF_Packet, or PCAP files. It can
 additionally handle TCP reassembly and provides an interface for IPC frame decoding.
