@@ -59,6 +59,13 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 				g.Events <- msg
 			}
 		}
+
+		// We're done with the current frame,
+		// if Sniffer is stopped then exit and
+		// user can start a new subscriber routine.
+		if !s.Active() {
+			return nil
+		}
 	}
 }
 
@@ -109,6 +116,10 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 
 				k.Events <- msg
 			}
+		}
+
+		if !s.Active() {
+			return nil
 		}
 	}
 }
