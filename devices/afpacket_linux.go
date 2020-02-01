@@ -19,13 +19,13 @@ func newAFPacketHandle(device string, snaplen int, blockSize int, blockCount int
 	h := &afpacketHandle{}
 
 	if device == "any" {
-		h.TPacket, err = afpacklet.NewTPacket(
+		h.TPacket, err = afpacket.NewTPacket(
 			afpacket.OptFrameSize(snaplen),
 			afpacket.OptBlockSize(blockSize),
 			afpacket.OptNumBlocks(blockCount),
 			afpacket.OptPollTimeout(timeout))
 	} else {
-		h.TPacket, err = afpacklet.NewTPacket(
+		h.TPacket, err = afpacket.NewTPacket(
 			afpacket.OptInterface(device),
 			afpacket.OptFrameSize(snaplen),
 			afpacket.OptBlockSize(blockSize),
