@@ -1,6 +1,9 @@
 package zanarkand
 
 import (
+	"bufio"
+	"bytes"
+	"io"
 	"testing"
 )
 
@@ -50,6 +53,20 @@ func TestDecode(t *testing.T) {
 
 	if !frame.Compressed {
 		t.Error("Expected compressed frame, got uncompressed")
+	}
+}
+
+func TestDiscard(t *testing.T) {
+	reader := bufio.NewReader(bytes.NewReader(headerTestBlob))
+	err := discardUntilValid(reader)
+	if err != nil {
+		t.Error("Expected no errors with discarding")
+	}
+
+	reader = bufio.NewReader(bytes.NewReader(badJujuTestBlob))
+	err = discardUntilValid(reader)
+	if err != io.EOF {
+		t.Error("Unexpected error with discarding")
 	}
 }
 
