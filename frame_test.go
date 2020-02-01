@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	"testing"
+	"time"
 )
 
 var headerTestBlob = []byte{
@@ -53,6 +54,14 @@ func TestDecode(t *testing.T) {
 
 	if !frame.Compressed {
 		t.Error("Expected compressed frame, got uncompressed")
+	}
+
+	if frame.Timestamp != time.Unix(int64(1549785778), int64(305000000)) {
+		t.Errorf("Expected frame timestamp to be 2019-02-10 08:02:58.305 GMT, got %v", frame.Timestamp.UnixNano())
+	}
+
+	if len(frame.Body) != int(frame.Length)-frameHeaderLength {
+		t.Errorf("Expected frame payload to be 52 bytes, got %d", len(frame.Body))
 	}
 }
 

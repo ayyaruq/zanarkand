@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"testing"
+	"time"
 )
 
 var decompressedTestBlob = []byte{
@@ -54,5 +55,39 @@ func TestHeaderDecode(t *testing.T) {
 	_, ok := err.(ErrNotEnoughData)
 	if !ok {
 		t.Errorf(err.Error())
+	}
+}
+
+func TestKeepaliveDecode(t *testing.T) {
+	reader := bufio.NewReader(bytes.NewReader(decompressedTestBlob))
+
+	message := KeepaliveMessage{}
+	err := message.Decode(reader)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	if message.Length != 24 {
+		t.Errorf("Expected message length 24, got %v", message.Length)
+	}
+
+	if message.SourceActor != 0x04030201 {
+		t.Errorf("Expected source actor 0x04030201, got %v", message.SourceActor)
+	}
+
+	if message.TargetActor != 0x08070605 {
+		t.Errorf("Expected target actor 0x08070605, got %v", message.TargetActor)
+	}
+
+	if message.Segment != ServerPong {
+		t.Errorf("Expected Keepalive response segment (8), got %v", message.Segment)
+	}
+
+	if message.ID != 123456789 {
+		t.Errorf("Expected Keepalive ID 123456789, got %v", message.ID)
+	}
+
+	if message.Timestamp != time.Unix(int64(1485430850), int64(0)) {
+		t.Errorf("Expected Keepalive timestamp to be 2017-01-26 11:40:50 GMT, got %v", message.Timestamp.UnixNano())
 	}
 }
