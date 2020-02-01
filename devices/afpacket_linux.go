@@ -48,6 +48,6 @@ func (h *afpacketHandle) LinkType() layers.LinkType {
 	return layers.LinkTypeEthernet
 }
 
-func (h *afpacketHandle) Close() {}
+func (h *afpacketHandle) Close() {
 	h.TPacket.Close()
 }
