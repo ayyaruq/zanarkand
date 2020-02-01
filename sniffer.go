@@ -199,7 +199,7 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 	frame.Decode(data)
 
 	if int(frame.Length) != len(data) {
-		return nil, fmt.Errorf("Data length %d does not match Frame header length %d", len(data), frame.Length)
+		return nil, ErrNotEnoughData{Expected: len(data), Received: int(frame.Length)}
 	}
 
 	return frame, nil

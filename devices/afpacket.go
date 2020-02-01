@@ -1,6 +1,6 @@
 package devices
 
-import "fmt"
+import "errors"
 
 // Calculate the size of the mmap buffers used for an AFPacket handle.
 // The block size and block count should add up to as close as possible
@@ -17,7 +17,7 @@ func afpacketCalculateBuffers(targetSize int, snaplen int, pageSize int) (frameS
 	blockCount = (targetSize * 1024 * 1024) / blockSize
 
 	if blockCount == 0 {
-		return 0, 0, 0, fmt.Errorf("Buffer size too small")
+		return 0, 0, 0, errors.New("Buffer size too small")
 	}
 
 	return frameSize, blockSize, blockCount, nil

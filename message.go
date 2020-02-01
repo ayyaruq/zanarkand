@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"time"
 )
 
@@ -50,8 +51,12 @@ func (m *GenericHeader) Decode(r *bufio.Reader) error {
 	data, err := r.Peek(16)
 	lengthBytes := len(data)
 
-	if err != nil || lengthBytes < 16 {
-		return fmt.Errorf("not enough data: expected at least 16 bytes, got %d", lengthBytes)
+	if err != nil {
+		return ErrNotEnoughData{Expected: 16, Received: lengthBytes, Err: err}
+	}
+
+	if lengthBytes < 16 {
+		return ErrNotEnoughData{Expected: 16, Received: lengthBytes, Err: io.ErrUnexpectedEOF}
 	}
 
 	m.Length = binary.LittleEndian.Uint32(data[0:4])
@@ -92,16 +97,16 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 		return err
 	}
 
-	length := header.Length
-	data, err := r.Peek(int(length))
+	length := int(header.Length)
+	data, err := r.Peek(length)
 	lengthBytes := len(data)
 
 	if err != nil {
-		return fmt.Errorf("not enough data: expected %d bytes, got %d", length, lengthBytes)
+		return ErrNotEnoughData{Expected: length, Received: lengthBytes, Err: err}
 	}
 
-	if int(header.Length) < gameEventMessageHeaderLength {
-		return fmt.Errorf("not enough data: expected at least %d bytes, got %d", gameEventMessageHeaderLength, lengthBytes)
+	if length < gameEventMessageHeaderLength {
+		return ErrNotEnoughData{Expected: gameEventMessageHeaderLength, Received: lengthBytes, Err: io.ErrUnexpectedEOF}
 	}
 
 	defer func() {
@@ -143,12 +148,12 @@ func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
 		return err
 	}
 
-	length := header.Length
-	data, err := r.Peek(int(length))
+	length := int(header.Length)
+	data, err := r.Peek(length)
 	lengthBytes := len(data)
 
 	if err != nil {
-		return fmt.Errorf("not enough data: expected %d bytes, got %d", length, lengthBytes)
+		return ErrNotEnoughData{Expected: length, Received: lengthBytes, Err: err}
 	}
 
 	defer func() {

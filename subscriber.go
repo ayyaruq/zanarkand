@@ -29,7 +29,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 	for {
 		frame, err := s.NextFrame()
 		if err != nil {
-			return fmt.Errorf("error retrieving next frame: %s", err)
+			return fmt.Errorf("error retrieving next frame: %w", err)
 		}
 
 		// Setup our Message reader
@@ -37,7 +37,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 		if frame.Compressed {
 			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
 			if err != nil {
-				return fmt.Errorf("error creating ZLIB decoder: %s", err)
+				return fmt.Errorf("error creating ZLIB decoder: %w", err)
 			}
 
 			defer z.Close()
@@ -49,7 +49,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 			header := new(GenericHeader)
 			err := header.Decode(r)
 			if err != nil {
-				return fmt.Errorf("error decoding message header: %s", err)
+				return ErrDecodingFailure{Err: err}
 			}
 
 			if header.Segment == GameEvent {
@@ -95,7 +95,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 		if frame.Compressed {
 			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
 			if err != nil {
-				return fmt.Errorf("error creating ZLIB decoder: %s", err)
+				return fmt.Errorf("error creating ZLIB decoder: %w", err)
 			}
 
 			defer z.Close()
@@ -107,10 +107,10 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 			header := new(GenericHeader)
 			err := header.Decode(r)
 			if err != nil {
-				return fmt.Errorf("error decoding message header: %s", err)
+				return ErrDecodingFailure{Err: err}
 			}
 
-			if (header.Segment == ServerPing || header.Segment == ServerPong) {
+			if header.Segment == ServerPing || header.Segment == ServerPong {
 				msg := new(KeepaliveMessage)
 				msg.Decode(r)
 
