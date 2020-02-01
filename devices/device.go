@@ -56,9 +56,9 @@ func FindDeviceByName(name string) (string, error) {
 	if name == "" {
 		if deviceAnySupported {
 			return "any", nil
-		} else {
-			return "", fmt.Errorf("No device name given")
 		}
+
+		return "", fmt.Errorf("No device name given")
 	}
 
 	device := ""

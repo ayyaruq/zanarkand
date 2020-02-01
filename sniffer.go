@@ -3,7 +3,6 @@ package zanarkand
 import (
 	"bufio"
 	"encoding/binary"
-	"errors"
 	"fmt"
 
 	"github.com/google/gopacket"
@@ -11,6 +10,8 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/gopacket/tcpassembly/tcpreader"
+
+	"github.com/ayyaruq/zanarkand/devices"
 )
 
 // reassembledChan is a byte channel to receive the length of a full frame
@@ -81,21 +82,19 @@ func (f *frameStream) run() {
 // Sniffer is a representation of a packet source, filter, and destination.
 type Sniffer struct {
 	// Sniffer State
-	active        chan bool
-	stateNotifier chan bool
-	state         bool
+	active chan bool
+	state  bool
 
 	// Packet Assembler
 	factory   tcpassembly.StreamFactory
 	pool      *tcpassembly.StreamPool
 	assembler *tcpassembly.Assembler
 
-	filter string
 	Source *gopacket.PacketSource
 }
 
 // NewSniffer creates a Sniffer instance.
-func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
+func NewSniffer(mode string, src string) (*Sniffer, error) {
 	// Setup Packet Assembler
 	streamFactory := new(frameStreamFactory)
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
@@ -105,27 +104,30 @@ func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
 
 	// Setup state tracker
 	stateController := make(chan bool, 1)
-	stateNotifier := make(chan bool, 1)
 
-	// Setup handle for device or file
-	var handle *pcap.Handle
+	// Setup handle and filter
 	var err error
+	var handle devices.DeviceHandle
+	var filter = "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551"
 
-	if fileName != "" {
-		handle, err = pcap.OpenOffline(fileName)
-	} else if ifDevice != "" {
-		handle, err = pcap.OpenLive(ifDevice, 1600, true, pcap.BlockForever)
-	} else {
-		return nil, errors.New("capture handle: no device or file provided")
+	if src == "" {
+		return nil, fmt.Errorf("capture handle: unable to open source: %v", src)
+	}
+
+	switch mode {
+	case "afpacket":
+		handle, err = devices.OpenAFPacket(src, filter, 25, pcap.BlockForever)
+
+	case "file":
+		handle, err = devices.OpenFile(src, filter)
+
+	case "pcap":
+	default:
+		handle, err = devices.OpenPcap(src, filter, pcap.BlockForever)
 	}
 
 	if err != nil {
-		return nil, fmt.Errorf("Unabe to open capture handle: %s", err)
-	}
-
-	err = handle.SetBPFFilter("tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551")
-	if err != nil {
-		return nil, fmt.Errorf("Unable to setup BPF filter: %s", err)
+		return nil, fmt.Errorf("capture handle: %w", err)
 	}
 
 	s := &Sniffer{
@@ -134,10 +136,10 @@ func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
 		assembler: assembler,
 
 		// Setup PacketSource
-		active:        stateController,
-		stateNotifier: stateNotifier,
-		state:         false,
-		Source:        gopacket.NewPacketSource(handle, handle.LinkType()),
+		active: stateController,
+		state:  false,
+
+		Source: gopacket.NewPacketSource(handle, handle.LinkType()),
 	}
 
 	return s, nil
@@ -147,26 +149,19 @@ func NewSniffer(fileName string, ifDevice string) (*Sniffer, error) {
 func (s *Sniffer) Start() {
 	s.state = true
 
-	var packet gopacket.Packet
-	var err error
+	packets := s.Source.Packets()
 
-	for {
+	for s.state {
 		select {
-		case <-s.active:
-			s.stateNotifier <- false
+		case state := <-s.active:
+			// Set state condition for Active() and loop control
+			s.state = state
 			return
 
-		default:
-			packet, err = s.Source.NextPacket()
-
+		case packet := <-packets:
 			// Nil Packet means end of a PCAP file
 			if packet == nil {
 				return
-			}
-
-			if err != nil {
-				fmt.Errorf("Error decoding packet: %s", err)
-				continue
 			}
 
 			if packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
@@ -186,13 +181,7 @@ func (s *Sniffer) Stop() int {
 	s.active <- false
 
 	// Flush the assembler buffer
-	closed := s.assembler.FlushAll()
-
-	// Set state condition for Active()
-	s.state = <-s.stateNotifier
-	fmt.Println("stopping")
-
-	return closed
+	return s.assembler.FlushAll()
 }
 
 // Active returns the state of a Sniffer.
