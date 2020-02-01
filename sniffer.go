@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
+	"io"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -146,7 +147,7 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 }
 
 // Start an initialised Sniffer.
-func (s *Sniffer) Start() {
+func (s *Sniffer) Start() error {
 	s.state = true
 
 	packets := s.Source.Packets()
@@ -156,16 +157,16 @@ func (s *Sniffer) Start() {
 		case state := <-s.active:
 			// Set state condition for Active() and loop control
 			s.state = state
-			return
+			return nil
 
 		case packet := <-packets:
 			// Nil Packet means end of a PCAP file
 			if packet == nil {
-				return
+				return io.EOF
 			}
 
+			// Kinda weird, just skip this packet
 			if packet.NetworkLayer() == nil || packet.TransportLayer() == nil || packet.TransportLayer().LayerType() != layers.LayerTypeTCP {
-				fmt.Println("Unusable Packet, something is not right")
 				continue
 			}
 
@@ -173,6 +174,8 @@ func (s *Sniffer) Start() {
 			s.assembler.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
 		}
 	}
+
+	return nil
 }
 
 // Stop a running Sniffer.
