@@ -34,7 +34,7 @@ func main() {
 	flag.Parse()
 
 	// Setup the Sniffer
-	sniffer, err := zanarkand.NewSniffer("", "en0")
+	sniffer, err := zanarkand.NewSniffer("pcap", "en0")
 	if err != nil {
 		log.Fatal(err)
 	}
