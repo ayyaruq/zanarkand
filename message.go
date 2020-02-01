@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/binary"
 	"fmt"
-	"io"
 	"time"
 )
 
@@ -55,10 +54,6 @@ func (m *GenericHeader) Decode(r *bufio.Reader) error {
 		return ErrNotEnoughData{Expected: 16, Received: lengthBytes, Err: err}
 	}
 
-	if lengthBytes < 16 {
-		return ErrNotEnoughData{Expected: 16, Received: lengthBytes, Err: io.ErrUnexpectedEOF}
-	}
-
 	m.Length = binary.LittleEndian.Uint32(data[0:4])
 	m.SourceActor = binary.LittleEndian.Uint32(data[4:8])
 	m.TargetActor = binary.LittleEndian.Uint32(data[8:12])
@@ -103,10 +98,6 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 
 	if err != nil {
 		return ErrNotEnoughData{Expected: length, Received: lengthBytes, Err: err}
-	}
-
-	if length < gameEventMessageHeaderLength {
-		return ErrNotEnoughData{Expected: gameEventMessageHeaderLength, Received: lengthBytes, Err: io.ErrUnexpectedEOF}
 	}
 
 	defer func() {
