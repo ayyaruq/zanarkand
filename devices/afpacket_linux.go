@@ -8,6 +8,8 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/afpacket"
 	"github.com/google/gopacket/layers"
+	"github.com/google/gopacket/pcap"
+	"golang.org/x/net/bpf"
 )
 
 type afpacketHandle struct {
@@ -40,8 +42,24 @@ func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo,
 	return h.TPacket.ReadPacketData()
 }
 
-func (h *afpacketHandle) SetBPFFilter(filter string) (_ error) {
-	return h.TPacket.SetBPFFilter(filter)
+func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (_ error) {
+	pcapBPF, err := pcap.CompileBPFFilter(h.LinkType(), snaplen, filter)
+	if err != nil {
+		return err
+	}
+
+	instructions := []bpf.RawInstruction{}
+	for _, ins := range pcapBPF {
+		rawins := bpf.RawInstruction{
+			Op: ins.Code,
+			Jt: ins.Jt,
+			Jf: ins.Jf,
+			K: ins.K,
+		}
+		instructions = append(instructions, rawins)
+	}
+
+	return h.TPacket.SetBPF(instructions)
 }
 
 func (h *afpacketHandle) LinkType() layers.LinkType {
