@@ -16,20 +16,20 @@ type afpacketHandle struct {
 	TPacket *afpacket.TPacket
 }
 
-func newAFPacketHandle(device string, snaplen int, blockSize int, blockCount int, timeout time.Duration) (*afpacketHandle, error) {
+func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount int, timeout time.Duration) (*afpacketHandle, error) {
 	var err error
 	h := &afpacketHandle{}
 
 	if device == "any" {
 		h.TPacket, err = afpacket.NewTPacket(
-			afpacket.OptFrameSize(snaplen),
+			afpacket.OptFrameSize(frameSize),
 			afpacket.OptBlockSize(blockSize),
 			afpacket.OptNumBlocks(blockCount),
 			afpacket.OptPollTimeout(timeout))
 	} else {
 		h.TPacket, err = afpacket.NewTPacket(
 			afpacket.OptInterface(device),
-			afpacket.OptFrameSize(snaplen),
+			afpacket.OptFrameSize(frameSize),
 			afpacket.OptBlockSize(blockSize),
 			afpacket.OptNumBlocks(blockCount),
 			afpacket.OptPollTimeout(timeout))
@@ -42,8 +42,8 @@ func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo,
 	return h.TPacket.ReadPacketData()
 }
 
-func (h *afpacketHandle) SetBPFFilter(filter string, snaplen int) (_ error) {
-	pcapBPF, err := pcap.CompileBPFFilter(h.LinkType(), snaplen, filter)
+func (h *afpacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
+	pcapBPF, err := pcap.CompileBPFFilter(h.LinkType(), frameSize, filter)
 	if err != nil {
 		return err
 	}

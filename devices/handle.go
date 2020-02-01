@@ -57,7 +57,7 @@ func OpenAFPacket(device string, filter string, bufferSize int, timeout time.Dur
 		return nil, err
 	}
 
-	err = h.SetBPFFilter(filter)
+	err = h.SetBPFFilter(filter, frameSize)
 	if err != nil {
 		h.Close()
 		return nil, err

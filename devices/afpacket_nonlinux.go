@@ -12,7 +12,7 @@ import (
 
 type afpacketHandle struct{}
 
-func newAFPacketHandle(device string, snaplen int, blockSize int, blockCount int, timeout time.Duration) (*afpacketHandle, error) {
+func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount int, timeout time.Duration) (*afpacketHandle, error) {
 	return nil, fmt.Errorf("AFPacket handles are only available on Linux")
 }
 
@@ -20,7 +20,7 @@ func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo,
 	return data, ci, fmt.Errorf("AFPacket handles are only available on Linux")
 }
 
-func (h *afpacketHandle) SetBPFFilter(filter string) (_ error) {
+func (h *afpacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
 	return fmt.Errorf("AFPacket handles are only available on Linux")
 }
 
