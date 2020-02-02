@@ -3,11 +3,12 @@ package zanarkand
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"testing"
 	"time"
 )
 
-var decompressedTestBlob = []byte{
+var decompressedKeepaliveBlob = []byte{
 	0x18, 0x00, 0x00, 0x00, // Length
 	0x01, 0x02, 0x03, 0x04, // Source Actor ID
 	0x05, 0x06, 0x07, 0x08, // Target Actor ID
@@ -16,14 +17,14 @@ var decompressedTestBlob = []byte{
 	0x42, 0xe0, 0x89, 0x58,
 }
 
-var lalafellLengthTestBlob = []byte{
+var lalafellLengthKeepaliveBlob = []byte{
 	0x18, 0x00, 0x00, 0x00, // Length
 	0x01, 0x02, 0x03, 0x04, // Source Actor ID
 	0x05, 0x06, 0x07, 0x08, // Target Actor ID
 }
 
 func TestHeaderDecode(t *testing.T) {
-	reader := bufio.NewReader(bytes.NewReader(decompressedTestBlob))
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 
 	header := GenericHeader{}
 	err := header.Decode(reader)
@@ -47,7 +48,7 @@ func TestHeaderDecode(t *testing.T) {
 		t.Errorf("Expected Keepalive response segment (8), got %v", header.Segment)
 	}
 
-	reader.Reset(bytes.NewReader(lalafellLengthTestBlob))
+	reader.Reset(bytes.NewReader(lalafellLengthKeepaliveBlob))
 	shortHeader := GenericHeader{}
 	err = shortHeader.Decode(reader)
 
@@ -58,8 +59,25 @@ func TestHeaderDecode(t *testing.T) {
 	}
 }
 
+func TestHeaderStringer(t *testing.T) {
+	var sentinel = "Segment - length: 24, source: 67305985, target: 134678021, segment: 8\n"
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
+
+	message := GenericHeader{}
+	err := message.Decode(reader)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	stringy := message.String()
+
+	if stringy != sentinel {
+		t.Errorf("Unexpected string, got %s, expected %s", stringy, sentinel)
+	}
+}
+
 func TestKeepaliveDecode(t *testing.T) {
-	reader := bufio.NewReader(bytes.NewReader(decompressedTestBlob))
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 
 	message := KeepaliveMessage{}
 	err := message.Decode(reader)
@@ -89,5 +107,42 @@ func TestKeepaliveDecode(t *testing.T) {
 
 	if message.Timestamp != time.Unix(int64(1485430850), int64(0)) {
 		t.Errorf("Expected Keepalive timestamp to be 2017-01-26 11:40:50 GMT, got %v", message.Timestamp.UnixNano())
+	}
+}
+
+func TestKeepaliveMarshal(t *testing.T) {
+	var sentinel = `{"length":24,"sourceActorID":67305985,"targetActorID":134678021,"segmentType":8,"ID":123456789}`
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
+
+	message := KeepaliveMessage{}
+	err := message.Decode(reader)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	serialised, err := json.Marshal(message)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(serialised) != sentinel {
+		t.Errorf("Unexpected encoding, got %s, expected %s", string(serialised), sentinel)
+	}
+}
+
+func TestKeepaliveStringer(t *testing.T) {
+	var sentinel = "Segment - length: 24, source: 67305985, target: 134678021, segment: 8\nMessage - ID: 123456789, timestamp: 1485430850\n"
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
+
+	message := KeepaliveMessage{}
+	err := message.Decode(reader)
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	stringy := message.String()
+
+	if stringy != sentinel {
+		t.Errorf("Unexpected string, got %s, expected %s", stringy, sentinel)
 	}
 }

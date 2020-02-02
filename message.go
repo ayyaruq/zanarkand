@@ -3,6 +3,7 @@ package zanarkand
 import (
 	"bufio"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -31,6 +32,7 @@ const (
 type GenericMessage interface {
 	Decode(*bufio.Reader) error
 	IsMessage()
+	MarshalJSON() ([]byte, error)
 	String() string
 }
 
@@ -38,10 +40,10 @@ type GenericMessage interface {
 // 0:16 provide the generic header, other types have additional header fields.
 // Data pulled from Sapphire's `Network/CommonNetwork.h`
 type GenericHeader struct {
-	Length      uint32 // [0:4] - always 0x18 (24: 32 for header minus 4 for Length field)
-	SourceActor uint32 // [4:8] - always 0
-	TargetActor uint32 // [8:12] - always 0
-	Segment     uint16 // [12:14] - 7 or 8
+	Length      uint32 `json:"length"`        // [0:4]
+	SourceActor uint32 `json:"sourceActorID"` // [4:8]
+	TargetActor uint32 `json:"targetActorID"` // [8:12]
+	Segment     uint16 `json:"segmentType"`   // [12:14]
 	padding     uint16 // [14:16]
 }
 
@@ -73,12 +75,12 @@ func (m *GenericHeader) String() string {
 type GameEventMessage struct {
 	GenericHeader
 	reserved  uint16    // [16:18] - always 0x1400
-	Opcode    uint16    // [18:20] - message context identifier, the "opcode"
+	Opcode    uint16    `json:"opcode"` // [18:20] - message context identifier, the "opcode"
 	padding2  uint16    // [20:22]
-	ServerID  uint16    // [22:24]
-	Timestamp time.Time // [24:28]
+	ServerID  uint16    `json:"serverID"` // [22:24]
+	Timestamp time.Time `json:"-"`        // [24:28]
 	padding3  uint32    // [28:32]
-	Body      []byte
+	Body      []byte    `json:"-"`
 }
 
 // IsMessage confirms a GameEventMessage is a Message.
@@ -115,17 +117,36 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 	return nil
 }
 
+// MarshalJSON provides an override for timestamp handling for encoding/JSON
+func (m *GameEventMessage) MarshalJSON() ([]byte, error) {
+	type Alias GameEventMessage
+	data := make([]int, len(m.Body))
+	for i, b := range m.Body {
+		data[i] = int(b)
+	}
+
+	return json.Marshal(&struct {
+		Data      []int `json:"data"`
+		Timestamp int32 `json:"timestamp"`
+		*Alias
+	}{
+		Data:      data,
+		Timestamp: int32(m.Timestamp.Unix()),
+		Alias:     (*Alias)(m),
+	})
+}
+
 // String prints a Segment and IPC Message specific headers.
 func (m GameEventMessage) String() string {
 	return fmt.Sprintf(m.GenericHeader.String()+"Message - server: %v, opcode: 0x%X, timestamp: %v\n",
-		m.ServerID, m.Opcode, m.Timestamp)
+		m.ServerID, m.Opcode, m.Timestamp.Unix())
 }
 
 // KeepaliveMessage is a representation of ping/pong requests.
 type KeepaliveMessage struct {
 	GenericHeader
-	ID        uint32    // [16:19]
-	Timestamp time.Time // [20:23]
+	ID        uint32    `json:"ID"` // [16:20]
+	Timestamp time.Time `json:"-"`  // [20:24]
 }
 
 // IsMessage confirms a KeepaliveMessage is a Message.
@@ -159,7 +180,19 @@ func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
 	return nil
 }
 
+// MarshalJSON provides an override for timestamp handling for encoding/JSON
+func (m *KeepaliveMessage) MarshalJSON() ([]byte, error) {
+	type Alias KeepaliveMessage
+	return json.Marshal(&struct {
+		Timestamp int32 `json:"timestamp"`
+		*Alias
+	}{
+		Timestamp: int32(m.Timestamp.Unix()),
+		Alias:     (*Alias)(m),
+	})
+}
+
 // String prints the Segment header and Keepalive Message.
 func (m *KeepaliveMessage) String() string {
-	return fmt.Sprintf(m.GenericHeader.String()+"Message - ID: %d, timestamp: %v\n", m.ID, m.Timestamp)
+	return fmt.Sprintf(m.GenericHeader.String()+"Message - ID: %d, timestamp: %v\n", m.ID, m.Timestamp.Unix())
 }

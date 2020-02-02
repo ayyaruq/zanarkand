@@ -3,6 +3,7 @@ package zanarkand
 import (
 	"bufio"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -13,16 +14,16 @@ var frameMagicLE uint64 = 0xE2465DFF41A05252
 // Frame is an FFXIV bundled message encapsulation layer.
 // Currently, bytes 4:7, 8:15, 32, and 34:39 are unknown.
 type Frame struct {
-	Magic      uint64    // [0:8] - mainly to verify magic bytes
-	Timestamp  time.Time // [16:24] - timestamp in milliseconds since epoch
-	Length     uint32    // [24:28]
-	Connection uint16    // [28:30] - 0 lobby, 1 zone, 2 chat
-	Count      uint16    // [30:32]
+	Magic      uint64    `json:"-"`              // [0:8] - mainly to verify magic bytes
+	Timestamp  time.Time `json:"-"`              // [16:24] - timestamp in milliseconds since epoch
+	Length     uint32    `json:"length"`         // [24:28]
+	Connection uint16    `json:"connectionType"` // [28:30] - 0 lobby, 1 zone, 2 chat
+	Count      uint16    `json:"count"`          // [30:32]
 	reserved1  byte      // [32]
-	Compressed bool      // [33] UINT8 bool tho
+	Compressed bool      `json:"compressed"` // [33] UINT8 bool tho
 	reserved2  uint32    // [34:38]
 	reserved3  uint16    // [38:40]
-	Body       []byte
+	Body       []byte    `json:"-"`
 }
 
 // Decode a frame from byte data
@@ -46,7 +47,7 @@ func (f *Frame) Decode(p []byte) {
 // String provides a string representation of a frame header.
 func (f *Frame) String() string {
 	return fmt.Sprintf("Frame - magic: 0x%X, timestamp: %v, length: %v, count: %v, compressed: %t, connection: %v",
-		f.Magic, f.Timestamp, f.Length, f.Count, f.Compressed, f.Connection)
+		f.Magic, f.Timestamp.Unix(), f.Length, f.Count, f.Compressed, f.Connection)
 }
 
 func discardUntilValid(r *bufio.Reader) error {
@@ -62,6 +63,25 @@ func discardUntilValid(r *bufio.Reader) error {
 
 		_, _ = r.Discard(1)
 	}
+}
+
+// MarshalJSON provides an override for timestamp handling for encoding/JSON
+func (f *Frame) MarshalJSON() ([]byte, error) {
+	type Alias Frame
+	data := make([]int, len(f.Body))
+	for i, b := range f.Body {
+		data[i] = int(b)
+	}
+
+	return json.Marshal(&struct {
+		Data      []int `json:"data"`
+		Timestamp int32 `json:"timestamp"`
+		*Alias
+	}{
+		Data:      data,
+		Timestamp: int32(f.Timestamp.Unix()),
+		Alias:     (*Alias)(f),
+	})
 }
 
 func validateMagic(header []byte) bool {

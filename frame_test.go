@@ -3,6 +3,7 @@ package zanarkand
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"io"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ var zlibBodyTestBlob = []byte{
 
 var zlibFrameTestBlob = append(headerTestBlob[:], zlibBodyTestBlob[:]...)
 
-func TestDecode(t *testing.T) {
+func TestFrameDecode(t *testing.T) {
 	frame := new(Frame)
 	frame.Decode(zlibFrameTestBlob)
 
@@ -65,7 +66,34 @@ func TestDecode(t *testing.T) {
 	}
 }
 
-func TestDiscard(t *testing.T) {
+func TestFrameMarshal(t *testing.T) {
+	var sentinel = `{"data":[120,156,51,96,96,96,40,139,80,19,88,51,69,81,128,25,200,22,97,112,101,100,96,96,101,216,116,43,62,6,200,101,136,217,200,192,192,97,242,130,217,95,212,129,17,196,7,0,205,193,8,40],"timestamp":1549785778,"length":92,"connectionType":0,"count":1,"compressed":true}`
+	frame := new(Frame)
+	frame.Decode(zlibFrameTestBlob)
+
+	serialised, err := json.Marshal(frame)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if string(serialised) != sentinel {
+		t.Errorf("Unexpected encoding, got %s, expected %s", string(serialised), sentinel)
+	}
+}
+
+func TestFrameStringer(t *testing.T) {
+	var sentinel = "Frame - magic: 0xE2465DFF41A05252, timestamp: 1549785778, length: 92, count: 1, compressed: true, connection: 0"
+	frame := new(Frame)
+	frame.Decode(zlibFrameTestBlob)
+
+	stringy := frame.String()
+
+	if stringy != sentinel {
+		t.Errorf("Unexpected string, got %s, expected %s", stringy, sentinel)
+	}
+}
+
+func TestFrameDiscard(t *testing.T) {
 	reader := bufio.NewReader(bytes.NewReader(headerTestBlob))
 	err := discardUntilValid(reader)
 	if err != nil {
@@ -79,7 +107,7 @@ func TestDiscard(t *testing.T) {
 	}
 }
 
-func TestValidatePredicate(t *testing.T) {
+func TestFrameValidatePredicate(t *testing.T) {
 	valid := validateMagic(headerTestBlob)
 
 	if !valid {
