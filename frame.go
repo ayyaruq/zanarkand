@@ -16,7 +16,7 @@ var frameMagicLE uint64 = 0xE2465DFF41A05252
 type Frame struct {
 	Magic      uint64    `json:"-"`              // [0:8] - mainly to verify magic bytes
 	Timestamp  time.Time `json:"-"`              // [16:24] - timestamp in milliseconds since epoch
-	Length     uint32    `json:"length"`         // [24:28]
+	Length     uint32    `json:"size"`           // [24:28]
 	Connection uint16    `json:"connectionType"` // [28:30] - 0 lobby, 1 zone, 2 chat
 	Count      uint16    `json:"count"`          // [30:32]
 	reserved1  byte      // [32]
@@ -46,7 +46,7 @@ func (f *Frame) Decode(p []byte) {
 
 // String provides a string representation of a frame header.
 func (f *Frame) String() string {
-	return fmt.Sprintf("Frame - magic: 0x%X, timestamp: %v, length: %v, count: %v, compressed: %t, connection: %v",
+	return fmt.Sprintf("Frame - magic: 0x%X, timestamp: %v, size: %v, count: %v, compressed: %t, connection: %v",
 		f.Magic, f.Timestamp.Unix(), f.Length, f.Count, f.Compressed, f.Connection)
 }
 

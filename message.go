@@ -40,7 +40,7 @@ type GenericMessage interface {
 // 0:16 provide the generic header, other types have additional header fields.
 // Data pulled from Sapphire's `Network/CommonNetwork.h`
 type GenericHeader struct {
-	Length      uint32 `json:"length"`        // [0:4]
+	Length      uint32 `json:"size"`          // [0:4]
 	SourceActor uint32 `json:"sourceActorID"` // [4:8]
 	TargetActor uint32 `json:"targetActorID"` // [8:12]
 	Segment     uint16 `json:"segmentType"`   // [12:14]
@@ -67,7 +67,7 @@ func (m *GenericHeader) Decode(r *bufio.Reader) error {
 
 // String is a stringer for the GenericHeader of a Message.
 func (m *GenericHeader) String() string {
-	return fmt.Sprintf("Segment - length: %d, source: %d, target: %d, segment: %d\n",
+	return fmt.Sprintf("Segment - size: %d, source: %d, target: %d, segment: %d\n",
 		m.Length, m.SourceActor, m.TargetActor, m.Segment)
 }
 
