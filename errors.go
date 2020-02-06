@@ -27,3 +27,10 @@ func (e ErrDecodingFailure) Error() string {
 }
 
 func (e *ErrDecodingFailure) Unwrap() error { return e.Err }
+
+// ErrUnknownInput indicates the provided mode for a sniffer is not a known type.
+type ErrUnknownInput struct {
+	Err error
+}
+
+func (e *ErrUnknownInput) Unwrap() error { return e.Err }

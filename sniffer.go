@@ -123,9 +123,9 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 		handle, err = devices.OpenFile(src, filter)
 
 	case "pcap":
-		fallthrough
-	default:
 		handle, err = devices.OpenPcap(src, filter, pcap.BlockForever)
+	default:
+		err = ErrDecodingFailure{Err: fmt.Errorf("Unknown input type: %s", mode)}
 	}
 
 	if err != nil {
