@@ -18,7 +18,7 @@ type AFPacketHandle struct {
 
 func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount int, timeout time.Duration) (*AFPacketHandle, error) {
 	var err error
-	h := &afpacketHandle{}
+	h := &AFPacketHandle{}
 
 	if device == "any" {
 		h.TPacket, err = afpacket.NewTPacket(
