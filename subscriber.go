@@ -22,7 +22,7 @@ func NewGameEventSubscriber() *GameEventSubscriber {
 }
 
 func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
-	if !s.Active() {
+	if !s.Active {
 		go s.Start()
 	}
 
@@ -63,7 +63,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 		// We're done with the current frame,
 		// if Sniffer is stopped then exit and
 		// user can start a new subscriber routine.
-		if !s.Active() {
+		if !s.Active {
 			return nil
 		}
 	}
@@ -80,7 +80,7 @@ func NewKeepaliveSubscriber() *KeepaliveSubscriber {
 }
 
 func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
-	if !s.Active() {
+	if !s.Active {
 		go s.Start()
 	}
 
@@ -118,7 +118,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 			}
 		}
 
-		if !s.Active() {
+		if !s.Active {
 			return nil
 		}
 	}

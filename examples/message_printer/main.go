@@ -40,7 +40,7 @@ func main() {
 
 	// Close when we're done
 	defer func(sniffer *zanarkand.Sniffer) {
-		if sniffer.Active() {
+		if sniffer.Active {
 			sniffer.Stop()
 			fmt.Println("stopped active sniifer")
 		} else {

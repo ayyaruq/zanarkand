@@ -83,8 +83,9 @@ func (f *frameStream) run() {
 // Sniffer is a representation of a packet source, filter, and destination.
 type Sniffer struct {
 	// Sniffer State
-	active chan bool
-	state  bool
+	Active   bool
+	Status   string
+	notifier chan bool
 
 	// Packet Assembler
 	factory   tcpassembly.StreamFactory
@@ -104,7 +105,7 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 	assembler.AssemblerOptions.MaxBufferedPagesTotal = 16
 
 	// Setup state tracker
-	stateController := make(chan bool, 1)
+	stateNotifier := make(chan bool, 1)
 
 	// Setup handle and filter
 	var err error
@@ -137,9 +138,9 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 		pool:      streamPool,
 		assembler: assembler,
 
-		// Setup PacketSource
-		active: stateController,
-		state:  false,
+		Active:   false,
+		Status:   "stopped",
+		notifier: stateNotifier,
 
 		Source: gopacket.NewPacketSource(handle, handle.LinkType()),
 	}
@@ -149,20 +150,27 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 
 // Start an initialised Sniffer.
 func (s *Sniffer) Start() error {
-	s.state = true
+	s.Active = true
+	s.Status = "running"
 
 	packets := s.Source.Packets()
 
-	for s.state {
+	for s.Active {
 		select {
-		case state := <-s.active:
-			// Set state condition for Active() and loop control
-			s.state = state
-			return nil
+		case state := <-s.notifier:
+			// Set state condition and loop control, if state is false, we're stopped
+			s.Active = state
+			if !state {
+				s.Status = "stopped"
+				return nil
+			}
+
+			continue
 
 		case packet := <-packets:
 			// Nil Packet means end of a PCAP file
 			if packet == nil {
+				s.Status = "finished"
 				return io.EOF
 			}
 
@@ -182,15 +190,10 @@ func (s *Sniffer) Start() error {
 // Stop a running Sniffer.
 func (s *Sniffer) Stop() int {
 	// Stop reading more packets
-	s.active <- false
+	s.notifier <- false
 
 	// Flush the assembler buffer
 	return s.assembler.FlushAll()
-}
-
-// Active returns the state of a Sniffer.
-func (s *Sniffer) Active() bool {
-	return s.state
 }
 
 // NextFrame returns the next decoded Frame read by the Sniffer.

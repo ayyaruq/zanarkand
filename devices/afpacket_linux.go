@@ -12,11 +12,11 @@ import (
 	"golang.org/x/net/bpf"
 )
 
-type afpacketHandle struct {
+type AFPacketHandle struct {
 	TPacket *afpacket.TPacket
 }
 
-func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount int, timeout time.Duration) (*afpacketHandle, error) {
+func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount int, timeout time.Duration) (*AFPacketHandle, error) {
 	var err error
 	h := &afpacketHandle{}
 
@@ -38,11 +38,11 @@ func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount i
 	return h, err
 }
 
-func (h *afpacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
+func (h *AFPacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
 	return h.TPacket.ReadPacketData()
 }
 
-func (h *afpacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
+func (h *AFPacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
 	pcapBPF, err := pcap.CompileBPFFilter(h.LinkType(), frameSize, filter)
 	if err != nil {
 		return err
@@ -54,7 +54,7 @@ func (h *afpacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
 			Op: ins.Code,
 			Jt: ins.Jt,
 			Jf: ins.Jf,
-			K: ins.K,
+			K:  ins.K,
 		}
 		instructions = append(instructions, rawins)
 	}
@@ -62,10 +62,10 @@ func (h *afpacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
 	return h.TPacket.SetBPF(instructions)
 }
 
-func (h *afpacketHandle) LinkType() layers.LinkType {
+func (h *AFPacketHandle) LinkType() layers.LinkType {
 	return layers.LinkTypeEthernet
 }
 
-func (h *afpacketHandle) Close() {
+func (h *AFPacketHandle) Close() {
 	h.TPacket.Close()
 }
