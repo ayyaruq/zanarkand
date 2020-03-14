@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -181,7 +182,7 @@ func (s *Sniffer) Start() error {
 
 			tcp := packet.TransportLayer().(*layers.TCP)
 			s.assembler.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
-			s.assembler.FlushWithOptions(tcpassembly.FlushOptions{CloseAll: false, T: 1 * time.Second})
+			s.assembler.FlushWithOptions(tcpassembly.FlushOptions{CloseAll: false, T: time.Now().Add(-3 * time.Second)})
 		}
 	}
 
