@@ -101,6 +101,8 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 	streamFactory := new(frameStreamFactory)
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
+	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 256
+	assembler.AssemblerOptions.MaxBufferedPagesTotal = 1536 // 256 for each of the Client/Server pairs for Lobby, Chat, and Zone
 
 	// Setup state tracker
 	stateNotifier := make(chan bool, 1)
