@@ -101,8 +101,8 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 	streamFactory := new(frameStreamFactory)
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
-	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 256
-	assembler.AssemblerOptions.MaxBufferedPagesTotal = 1536 // 256 for each of the Client/Server pairs for Lobby, Chat, and Zone
+	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 32
+	assembler.AssemblerOptions.MaxBufferedPagesTotal = 192 // 32 for each of the Client/Server pairs for Lobby, Chat, and Zone
 
 	// Setup state tracker
 	stateNotifier := make(chan bool, 1)
@@ -181,6 +181,7 @@ func (s *Sniffer) Start() error {
 
 			tcp := packet.TransportLayer().(*layers.TCP)
 			s.assembler.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
+			s.assembler.FlushWithOptions(tcpassembly.FlushOptions{CloseAll: false, T: 1 * time.Second})
 		}
 	}
 
