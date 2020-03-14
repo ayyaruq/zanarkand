@@ -101,8 +101,6 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 	streamFactory := new(frameStreamFactory)
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
-	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 16
-	assembler.AssemblerOptions.MaxBufferedPagesTotal = 16
 
 	// Setup state tracker
 	stateNotifier := make(chan bool, 1)
