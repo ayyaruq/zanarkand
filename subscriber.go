@@ -7,15 +7,18 @@ import (
 	"fmt"
 )
 
+// Subscriber describes the interface for individual Frame segment subscribers.
 type Subscriber interface {
 	Subscribe(*Sniffer)
 }
 
+// GameEventSubscriber is a Subscriber for GameEvent segments.
 type GameEventSubscriber struct {
 	IngressEvents chan *GameEventMessage
 	EgressEvents  chan *GameEventMessage
 }
 
+// NewGameEventSubscriber returns a Subscriber handle with channels for inbound and outbound GameEventMessages.
 func NewGameEventSubscriber() *GameEventSubscriber {
 	return &GameEventSubscriber{
 		IngressEvents: make(chan *GameEventMessage),
@@ -23,6 +26,7 @@ func NewGameEventSubscriber() *GameEventSubscriber {
 	}
 }
 
+// Subscribe starts the GameEventSubscriber.
 func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 	if !s.Active {
 		go s.Start()
@@ -80,16 +84,19 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 	}
 }
 
+// KeepaliveSubscriber is a Subscriber for Keepalive segments.
 type KeepaliveSubscriber struct {
 	Events chan *KeepaliveMessage
 }
 
+// NewKeepaliveSubscriber returns a Subscriber handle. As the traffic is minimal, this subscriber uses a single Event channel.
 func NewKeepaliveSubscriber() *KeepaliveSubscriber {
 	return &KeepaliveSubscriber{
 		Events: make(chan *KeepaliveMessage),
 	}
 }
 
+// Subscribe starts the KeepaliveSubscriber.
 func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 	if !s.Active {
 		go s.Start()
