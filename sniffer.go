@@ -170,10 +170,9 @@ func (s *Sniffer) Start() error {
 			s.Active = state
 			if !state {
 				s.Status = "stopped"
+				s.assembler.FlushAll()
 				return nil
 			}
-
-			continue
 
 		case packet := <-packets:
 			// Nil Packet means end of a PCAP file
@@ -199,12 +198,8 @@ func (s *Sniffer) Start() error {
 }
 
 // Stop a running Sniffer.
-func (s *Sniffer) Stop() int {
-	// Stop reading more packets
+func (s *Sniffer) Stop() {
 	s.notifier <- false
-
-	// Flush the assembler buffer
-	return s.assembler.FlushAll()
 }
 
 // NextFrame returns the next decoded Frame read by the Sniffer.
