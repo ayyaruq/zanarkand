@@ -16,8 +16,14 @@ import (
 	"github.com/ayyaruq/zanarkand/devices"
 )
 
+// reassembledPacket is a frame payload with TCP metadata
+type reassembledPacket struct {
+	Body []byte
+	Flow gopacket.Flow
+}
+
 // reassembledChan is a byte channel to receive the length of a full frame
-var reassembledChan = make(chan []byte, 200)
+var reassembledChan = make(chan reassembledPacket, 200)
 
 // frameStreamFactory implements tcpassembly.StreamFactory.
 type frameStreamFactory struct{}
@@ -76,7 +82,7 @@ func (f *frameStream) run() {
 			return
 		}
 
-		reassembledChan <- data
+		reassembledChan <- reassembledPacket{Body: data, Flow: f.net}
 	}
 
 }
@@ -205,10 +211,10 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 	// Setup our Frame
 	frame := new(Frame)
 
-	frame.Decode(data)
+	frame.Decode(data.Body)
 
-	if int(frame.Length) != len(data) {
-		return nil, ErrNotEnoughData{Expected: len(data), Received: int(frame.Length)}
+	if int(frame.Length) != len(data.Body) {
+		return nil, ErrNotEnoughData{Expected: len(data.Body), Received: int(frame.Length)}
 	}
 
 	return frame, nil
