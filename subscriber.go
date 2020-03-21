@@ -12,12 +12,14 @@ type Subscriber interface {
 }
 
 type GameEventSubscriber struct {
-	Events chan *GameEventMessage
+	IngressEvents chan *GameEventMessage
+	EgressEvents  chan *GameEventMessage
 }
 
 func NewGameEventSubscriber() *GameEventSubscriber {
 	return &GameEventSubscriber{
-		Events: make(chan *GameEventMessage),
+		IngressEvents: make(chan *GameEventMessage),
+		EgressEvents:  make(chan *GameEventMessage),
 	}
 }
 
@@ -56,7 +58,16 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 				msg := new(GameEventMessage)
 				msg.Decode(r)
 
-				g.Events <- msg
+				switch frame.Direction() {
+				case FrameIngress:
+					g.IngressEvents <- msg
+
+				case FrameEgress:
+					g.EgressEvents <- msg
+
+				default:
+					return ErrDecodingFailure{Err: fmt.Errorf("unexpected frame direction")}
+				}
 			}
 		}
 
