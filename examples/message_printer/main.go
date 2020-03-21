@@ -56,8 +56,11 @@ func main() {
 
 	for {
 		select {
-		case message := <-subscriber.Events:
-			fmt.Printf("%v\n", message.String())
+		case inbound := <-subscriber.IngressEvents:
+			fmt.Printf("Received: %s\n", inbound.String())
+
+		case outbound := <-subscriber.EgressEvents:
+			fmt.Printf("Sent: %s\n", outbound.String())
 
 		case sig := <-gracefulStop:
 			fmt.Printf("Received %v signal\n", sig)
