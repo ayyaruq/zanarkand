@@ -50,13 +50,20 @@ func main() {
 		}
 	}()
 
+// Capture the first 10 Messages sent from the server
+// This ignores Messages sent by the client to the server
 	for i := 0, i < 10; i++ {
-		message := <-subscriber.Events
+		message := <-subscriber.IngressEvents
 		fmt.Println(message.String())
 	}
 
+	// Stop the sniffer
 	sniffer.Stop()
-	subscriber.Events.Close()
+
+	// Close the channels if you really want to
+	// This leaves no time for them to drain
+	close(subscriber.IngressEvents)
+	close(subscriber.EgressEvents)
 }
 ```
 
