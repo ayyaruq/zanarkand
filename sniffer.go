@@ -172,9 +172,8 @@ func (s *Sniffer) Start() error {
 				s.Status = "stopped"
 				s.assembler.FlushAll()
 				return nil
-			} else {
-				s.Status = "running"
 			}
+			s.Status = "running"
 
 		case packet := <-packets:
 			// Nil Packet means end of a PCAP file
