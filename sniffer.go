@@ -120,7 +120,7 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 	var filter = "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551"
 
 	if src == "" {
-		return nil, fmt.Errorf("capture handle: unable to open source: %v", src)
+		return nil, fmt.Errorf("capture handle: no source provided")
 	}
 
 	switch mode {
@@ -158,6 +158,7 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 // Start an initialised Sniffer.
 func (s *Sniffer) Start() error {
 	s.notifier <- true
+	s.Active = <- s.notifier
 	s.Status = "started"
 
 	packets := s.Source.Packets()
@@ -215,6 +216,9 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 	if int(frame.Length) != len(data.Body) {
 		return nil, ErrNotEnoughData{Expected: len(data.Body), Received: int(frame.Length)}
 	}
+
+	// Add our flow data
+	frame.meta.Flow = data.Flow
 
 	return frame, nil
 }
