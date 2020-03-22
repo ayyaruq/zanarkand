@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -12,6 +11,10 @@ import (
 )
 
 func main() {
+	os.Exit(fakeMain())
+}
+
+func fakeMain() int {
 	// Setup program control
 	var gracefulStop = make(chan os.Signal)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
@@ -36,35 +39,35 @@ func main() {
 	sniffer, err := zanarkand.NewSniffer(*mode, src)
 	if err != nil {
 		log.Fatal(err)
+		return 1
 	}
-
-	// Close when we're done
-	defer func(sniffer *zanarkand.Sniffer) {
-		if sniffer.Active {
-			sniffer.Stop()
-			fmt.Println("stopped active sniifer")
-		} else {
-			fmt.Println("no active sniffer")
-		}
-	}(sniffer)
 
 	// Create our message receiver channel
 	subscriber := zanarkand.NewGameEventSubscriber()
 
+	// Close when we're done
+	defer func(sniffer *zanarkand.Sniffer) {
+		if sniffer.Active {
+			subscriber.Close()
+			log.Println("Stopped active snifer")
+		}
+	}(sniffer)
+
 	// Don't block the Sniffer
+	log.Println("Starting sniffer from source", src)
 	go subscriber.Subscribe(sniffer)
 
 	for {
 		select {
 		case inbound := <-subscriber.IngressEvents:
-			fmt.Printf("Received: %s\n", inbound.String())
+			log.Printf("Received: %s", inbound.String())
 
 		case outbound := <-subscriber.EgressEvents:
-			fmt.Printf("Sent: %s\n", outbound.String())
+			log.Printf("Sent: %s", outbound.String())
 
 		case sig := <-gracefulStop:
-			fmt.Printf("Received %v signal\n", sig)
-			os.Exit(0) // this is bad and should be run in a wrapper function since it breaks defers but
+			log.Printf("Received %v signal", sig)
+			return 0
 		}
 	}
 }
