@@ -11,6 +11,7 @@ import (
 	"github.com/ayyaruq/zanarkand"
 )
 
+// OpcodeEventPlay32 is the opcode we want to filter on, updated for patch 5.21 hotfix.
 const OpcodeEventPlay32 = 0x03AF
 
 func main() {

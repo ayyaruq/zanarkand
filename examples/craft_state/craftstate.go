@@ -1,5 +1,6 @@
 package main
 
+// CraftState represents the Event data for updating the crafting window.
 type CraftState struct {
 	U1                uint32
 	U3                uint32
