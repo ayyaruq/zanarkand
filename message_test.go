@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/json"
+	"io"
 	"testing"
 	"time"
 )
@@ -17,6 +18,11 @@ var compressedGameEventBlob = []byte{
 	0xE2, 0x7C, 0x18, 0x19, 0x04, 0xD4, 0x19, 0x18,
 	0x6E, 0x31, 0xD5, 0xDD, 0xFD, 0x5F, 0xCF, 0xC0,
 	0x00, 0x00, 0xCD, 0xED, 0x09, 0x7F,
+}
+
+var lalafellLengthGameEventBlob = []byte{
+	0x30, 0x00, 0x00, 0x00, 0xE2, 0x31, 0x58, 0x10,
+	0x38, 0xDC, 0x68, 0x10, 0x03, 0x00, 0x00, 0x00,
 }
 
 var decompressedKeepaliveBlob = []byte{
@@ -64,9 +70,18 @@ func TestHeaderDecode(t *testing.T) {
 	err = shortHeader.Decode(reader)
 
 	// This is fucking dumb, for some reason errors.As() doesn't work here
-	_, ok := err.(ErrNotEnoughData)
+	typedErr, ok := err.(ErrNotEnoughData)
 	if !ok {
 		t.Errorf(err.Error())
+	}
+
+	if err.Error() != "Not enough data: Expected 16 bytes but received 12: EOF" {
+		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'Not enough data: Expected 16 bytes but received 12: EOF', got %s",
+			err.Error())
+	}
+
+	if typedErr.Unwrap() != io.EOF {
+		t.Errorf("Expected io.EOF, received %v", typedErr.Unwrap())
 	}
 }
 
@@ -119,6 +134,24 @@ func TestGameEventDecode(t *testing.T) {
 
 	if message.Timestamp != time.Unix(int64(1580625008), int64(0)) {
 		t.Errorf("Expected GameEvent timestamp to be 2020-02-02 06:30:08 GMT, got %v", message.Timestamp.UnixNano())
+	}
+
+	reader.Reset(bytes.NewReader(lalafellLengthGameEventBlob))
+	shortMessage := new(GameEventMessage)
+	err = shortMessage.Decode(reader)
+
+	typedErr, ok := err.(ErrNotEnoughData)
+	if !ok {
+		t.Errorf(err.Error())
+	}
+
+	if err.Error() != "Not enough data: Expected 48 bytes but received 16: EOF" {
+		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'Not enough data: Expected 48 bytes but received 16: EOF', got %s",
+			err.Error())
+	}
+
+	if typedErr.Unwrap() != io.EOF {
+		t.Errorf("Expected io.EOF, received %v", typedErr.Unwrap())
 	}
 }
 
@@ -192,6 +225,24 @@ func TestKeepaliveDecode(t *testing.T) {
 
 	if message.Timestamp != time.Unix(int64(1485430850), int64(0)) {
 		t.Errorf("Expected Keepalive timestamp to be 2017-01-26 11:40:50 GMT, got %v", message.Timestamp.UnixNano())
+	}
+
+	reader.Reset(bytes.NewReader(lalafellLengthKeepaliveBlob))
+	shortMessage := new(KeepaliveMessage)
+	err = shortMessage.Decode(reader)
+
+	typedErr, ok := err.(ErrNotEnoughData)
+	if !ok {
+		t.Errorf(err.Error())
+	}
+
+	if err.Error() != "Not enough data: Expected 16 bytes but received 12: EOF" {
+		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'Not enough data: Expected 16 bytes but received 12: EOF', got %s",
+			err.Error())
+	}
+
+	if typedErr.Unwrap() != io.EOF {
+		t.Errorf("Expected io.EOF, received %v", typedErr.Unwrap())
 	}
 }
 
