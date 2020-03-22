@@ -55,7 +55,7 @@ func fakeMain() int {
 			if inbound.Opcode == OpcodeEventPlay32 {
 				event := new(EventPlay32)
 				event.UnmarshalBytes(inbound.Body)
-				if (event.EventID == EventIDs["CraftState"]) {
+				if event.EventID == EventIDs["CraftState"] {
 					craftState, ok := event.Data.(CraftState)
 					if ok {
 						log.Println(json.Marshal(craftState))

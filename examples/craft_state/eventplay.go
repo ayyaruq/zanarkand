@@ -28,24 +28,24 @@ type EventPlay32 struct {
 }
 
 func (e *EventPlay32) UnmarshalBytes(data []byte) error {
-  headerSize := binary.Size(e.EventPlayHeader)
-  if len(data) != (headerSize + 128) {
-    return fmt.Errorf("unexpected length: received %d, expected %d", len(data), headerSize + 128)
-  }
+	headerSize := binary.Size(e.EventPlayHeader)
+	if len(data) != (headerSize + 128) {
+		return fmt.Errorf("unexpected length: received %d, expected %d", len(data), headerSize+128)
+	}
 
-  err := binary.Read(bytes.NewReader(data[:headerSize]), binary.LittleEndian, &e.EventPlayHeader)
-  if err != nil {
-    return err
-  }
+	err := binary.Read(bytes.NewReader(data[:headerSize]), binary.LittleEndian, &e.EventPlayHeader)
+	if err != nil {
+		return err
+	}
 
-  switch e.EventID {
-  case EventIDs["CraftState"]:
-    craftState := new(CraftState)
-    err := binary.Read(bytes.NewReader(data[headerSize:]), binary.LittleEndian, &craftState)
-    if err != nil {
-      return err
-    }
-    e.Data = craftState
+	switch e.EventID {
+	case EventIDs["CraftState"]:
+		craftState := new(CraftState)
+		err := binary.Read(bytes.NewReader(data[headerSize:]), binary.LittleEndian, &craftState)
+		if err != nil {
+			return err
+		}
+		e.Data = craftState
 
 	default:
 		event := new(GenericEventPlay32Data)
@@ -54,9 +54,9 @@ func (e *EventPlay32) UnmarshalBytes(data []byte) error {
 			return err
 		}
 		e.Data = event
-  }
+	}
 
-  return nil
+	return nil
 }
 
 type EventPlay32Data interface {
