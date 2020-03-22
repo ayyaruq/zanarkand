@@ -45,7 +45,7 @@ func (e *EventPlay32) UnmarshalBytes(data []byte) error {
 	switch e.EventID {
 	case EventIDs["CraftState"]:
 		craftState := new(CraftState)
-		err := binary.Read(bytes.NewReader(data[headerSize:]), binary.LittleEndian, &craftState)
+		err := binary.Read(bytes.NewReader(data[headerSize:]), binary.LittleEndian, craftState)
 		if err != nil {
 			return err
 		}
@@ -53,7 +53,7 @@ func (e *EventPlay32) UnmarshalBytes(data []byte) error {
 
 	default:
 		event := new(GenericEventPlay32Data)
-		err := binary.Read(bytes.NewReader(data[headerSize:]), binary.LittleEndian, &event)
+		err := binary.Read(bytes.NewReader(data[headerSize:]), binary.LittleEndian, event)
 		if err != nil {
 			return err
 		}

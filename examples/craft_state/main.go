@@ -42,13 +42,18 @@ func fakeMain() int {
 	defer func(sniffer *zanarkand.Sniffer) {
 		if sniffer.Active {
 			subscriber.Close(sniffer)
-			log.Println("Stopped active snifer")
+			log.Println("Stopped active sniffer")
 		}
 	}(sniffer)
 
 	// Don't block the Sniffer
 	log.Println("Starting sniffer on interface", *inet)
-	go subscriber.Subscribe(sniffer)
+	go func() {
+		err := subscriber.Subscribe(sniffer)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	for {
 		select {
@@ -57,9 +62,10 @@ func fakeMain() int {
 				event := new(EventPlay32)
 				event.UnmarshalBytes(inbound.Body)
 				if event.EventID == EventIDs["CraftState"] {
-					craftState, ok := event.Data.(CraftState)
+					craftState, ok := event.Data.(*CraftState)
 					if ok {
-						log.Println(json.Marshal(craftState))
+						text, _ := json.Marshal(craftState)
+						log.Println(string(text))
 					} else {
 						log.Println("Unable to validate Event type")
 					}
