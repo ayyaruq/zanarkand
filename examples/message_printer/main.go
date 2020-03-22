@@ -48,7 +48,7 @@ func fakeMain() int {
 	// Close when we're done
 	defer func(sniffer *zanarkand.Sniffer) {
 		if sniffer.Active {
-			subscriber.Close()
+			subscriber.Close(sniffer)
 			log.Println("Stopped active snifer")
 		}
 	}(sniffer)

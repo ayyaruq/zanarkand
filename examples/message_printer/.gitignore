@@ -1,4 +1,3 @@
-./message_printer
-
+*.out
 *.exe
 *.exe~
