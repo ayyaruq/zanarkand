@@ -10,6 +10,7 @@ import (
 // Subscriber describes the interface for individual Frame segment subscribers.
 type Subscriber interface {
 	Subscribe(*Sniffer)
+	Close()
 }
 
 // GameEventSubscriber is a Subscriber for GameEvent segments.
@@ -84,6 +85,13 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 	}
 }
 
+// Close will stop a sniffer, drain the channels, then close the channels.
+func (g *GameEventSubscriber) Close(s *Sniffer) {
+	s.Stop()
+	close(g.IngressEvents)
+	close(g.EgressEvents)
+}
+
 // KeepaliveSubscriber is a Subscriber for Keepalive segments.
 type KeepaliveSubscriber struct {
 	Events chan *KeepaliveMessage
@@ -140,4 +148,10 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 			return nil
 		}
 	}
+}
+
+// Close will stop a sniffer, drain the channel, then close the channel.
+func (k *KeepaliveSubscriber) Close(s *Sniffer) {
+	s.Stop()
+	close(k.Events)
 }
