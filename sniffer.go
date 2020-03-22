@@ -157,8 +157,8 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 
 // Start an initialised Sniffer.
 func (s *Sniffer) Start() error {
-	s.Active = true
-	s.Status = "running"
+	s.notifier <- true
+	s.Status = "started"
 
 	packets := s.Source.Packets()
 	ticker := time.Tick(3 * time.Second)
@@ -172,6 +172,8 @@ func (s *Sniffer) Start() error {
 				s.Status = "stopped"
 				s.assembler.FlushAll()
 				return nil
+			} else {
+				s.Status = "running"
 			}
 
 		case packet := <-packets:
