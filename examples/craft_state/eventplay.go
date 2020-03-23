@@ -16,11 +16,11 @@ type EventPlayHeader struct {
 	ActorID    uint64
 	EventID    uint32
 	Scene      uint16
-	Pad1       uint16
+	Pad1       uint16 `json:"-"`
 	Flags      uint32
 	P1         uint32
 	ParamCount byte
-	Pad2       [3]byte
+	Pad2       [3]byte `json:"-"`
 	P2         uint32
 }
 
