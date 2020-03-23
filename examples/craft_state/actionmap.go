@@ -1,6 +1,7 @@
 package main
 
 var actionMap = map[uint32]string{
+	5518:   "Failed",
 	252:    "Inner Quiet",
 	253:    "Inner Quiet",
 	254:    "Inner Quiet",

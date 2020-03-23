@@ -1,6 +1,7 @@
 package main
 
 var conditionMap = map[uint32]string{
+	0: "Failed",
 	1: "Normal",
 	2: "Good",
 	3: "Excellent",
