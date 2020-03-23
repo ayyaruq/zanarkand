@@ -64,7 +64,12 @@ func fakeMain() int {
 				if event.EventID == EventIDs["CraftState"] {
 					craftState, ok := event.Data.(*CraftState)
 					if ok {
-						text, _ := json.Marshal(craftState)
+						craftEvent := struct{
+							Event EventPlayHeader
+							State *CraftState
+						}{ event.EventPlayHeader, craftState }
+
+						text, _ := json.Marshal(craftEvent)
 						log.Println(string(text))
 					} else {
 						log.Println("Unable to validate Event type")
