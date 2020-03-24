@@ -5,8 +5,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"net"
 	"testing"
 	"time"
+
+	"github.com/google/gopacket"
+	"github.com/google/gopacket/layers"
 )
 
 var headerTestBlob = []byte{
@@ -117,5 +121,40 @@ func TestFrameValidatePredicate(t *testing.T) {
 	invalid := validateMagic(badJujuTestBlob)
 	if invalid {
 		t.Error("Expected invalid predicate magic bytes to fail validation")
+	}
+}
+
+func TestFlowDirection(t *testing.T) {
+	loopback := net.ParseIP("127.0.0.1")
+	private  := net.ParseIP("192.168.1.100")
+	public   := net.ParseIP("124.150.157.158")
+
+	if !isPrivate(loopback) {
+		t.Error("Expected loopback to be private")
+	}
+
+	if !isPrivate(private) {
+		t.Error("Expected 192.168.1.100 to be private")
+	}
+
+	if isPrivate(public) {
+		t.Error("Expected 124.150.157.158 to not be private")
+	}
+
+	f := new(Frame)
+
+	f.meta.Flow = gopacket.NewFlow(layers.EndpointIPv4, private, public)
+	if f.Direction() != FrameEgress {
+		t.Error("Expected 192.168.1.100->124.150.157.158 to be Egress")
+	}
+
+	f.meta.Flow = gopacket.NewFlow(layers.EndpointIPv4, public, private)
+	if f.Direction() != FrameIngress {
+		t.Error("Expected 124.150.157.158->192.168.1.100 to be Ingress")
+	}
+
+	f.meta.Flow = gopacket.NewFlow(layers.EndpointIPv4, loopback, private)
+	if f.Direction() != 0 {
+		t.Error("Expected local traffic to get funky")
 	}
 }
