@@ -162,7 +162,8 @@ func (s *Sniffer) Start() error {
 	s.Status = "started"
 
 	packets := s.Source.Packets()
-	ticker := time.Tick(3 * time.Second)
+	ticker := time.NewTicker(3 * time.Second)
+	defer ticker.Stop()
 
 	for s.Active {
 		select {
@@ -191,8 +192,8 @@ func (s *Sniffer) Start() error {
 			tcp := packet.TransportLayer().(*layers.TCP)
 			s.assembler.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
 
-		case <-ticker:
-			s.assembler.FlushWithOptions(tcpassembly.FlushOptions{CloseAll: false, T: time.Now().Add(time.Second * -3)})
+		case t := <-ticker.C:
+			s.assembler.FlushWithOptions(tcpassembly.FlushOptions{CloseAll: false, T: t.Add(-3 * time.Second)})
 		}
 	}
 
