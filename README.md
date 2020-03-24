@@ -59,12 +59,7 @@ func main() {
 	}
 
 	// Stop the sniffer
-	sniffer.Stop()
-
-	// Close the channels if you really want to
-	// This leaves no time for them to drain
-	close(subscriber.IngressEvents)
-	close(subscriber.EgressEvents)
+	subscriber.Close()
 }
 ```
 
@@ -74,19 +69,22 @@ func main() {
 To start, install Go 1.13 or later. For ease of error handling, the Go 1.13 error wrapping features are used and so this
 is the minimum supported version.
 
-Once you have a Go environment setup, install dependencies with `go mod download`.
+To add to your project, simple `go mod init` if you don't already have a `go.mod` file, and then
+`go get -u github.com/ayyaruq/zanarkand`.
+
+
+## Contributing
+
+Once you have a Go environment setup, install dependencies with `make deps`.
 
 Zanarkand follows the normal `go fmt` for style. All methods and types should be at least somewhat documented,
 beyond that develop as you will as there's no specific expectations. Changes are best submited as pull-requests in GitHub.
 
-Regarding versioning, at this point it's probably overkill, as opcodes and types should be externalised and so there's no
+Regarding versioning, at this point it's probably overkill, as opcodes and types are externalised and so there's no
 real need to have explicit versions on Zanarkand itself.
 
 
 ## TODO
-- [ ] examples
-- [ ] tests
-- [ ] better error wrapping
-- [ ] winsock capture from a PID via the TCP table (requires iphlpapi)
+- [ ] better error wrapping (GH#4)
+- [ ] winsock capture from a PID via the TCP table, requires iphlpapi (GH#3)
 - [ ] support fragmented Frames (when a Message spans 2 Frames)
-- [ ] other Segment types (currently only IPC seg 3 is implemented)
