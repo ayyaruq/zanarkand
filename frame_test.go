@@ -35,7 +35,7 @@ var zlibBodyTestBlob = []byte{
 	0xCD, 0xC1, 0x08, 0x28,
 }
 
-var zlibFrameTestBlob = append(headerTestBlob[:], zlibBodyTestBlob[:]...)
+var zlibFrameTestBlob = append(headerTestBlob, zlibBodyTestBlob...)
 
 func TestFrameDecode(t *testing.T) {
 	frame := new(Frame)

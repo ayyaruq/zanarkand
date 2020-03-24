@@ -1,3 +1,4 @@
+//lint:file-ignore U1000 Ignore unused struct members as they're part of the payload and users may want them
 package zanarkand
 
 import (
@@ -147,9 +148,5 @@ func isPrivate(ip net.IP) bool {
 func validateMagic(header []byte) bool {
 	magic := binary.LittleEndian.Uint64(header)
 
-	if magic != frameMagicLE {
-		return false
-	}
-
-	return true
+	return magic == frameMagicLE
 }

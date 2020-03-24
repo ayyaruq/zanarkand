@@ -25,7 +25,7 @@ type reassembledPacket struct {
 // reassembledChan is a byte channel to receive the length of a full frame
 var reassembledChan = make(chan reassembledPacket, 200)
 
-// frameStreamFactory implements tcpassembly.StreamFactory.
+// frameStreamFactory implements tcpassembly.StreamFactory
 type frameStreamFactory struct{}
 
 // frameStream handles decoding TCP packets
@@ -42,14 +42,14 @@ func (f *frameStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Strea
 		r:         tcpreader.NewReaderStream(),
 	}
 
-	// Start the Stream or prepare to clench.
+	// Start the Stream or prepare to clench
 	go fs.run()
 
-	// ReaderStream implements tcpassembly.Stream so return a pointer to it.
+	// ReaderStream implements tcpassembly.Stream so return a pointer to it
 	return &fs.r
 }
 
-// Run the stream, quickly.
+// Run the stream, quickly
 func (f *frameStream) run() {
 	var reader = bufio.NewReaderSize(&f.r, 128*1024)
 
@@ -57,14 +57,14 @@ func (f *frameStream) run() {
 		// Skip to start of a frame
 		err := discardUntilValid(reader)
 		if err != nil {
-			fmt.Errorf("Error syncing Frame start position: %s", err)
+			fmt.Errorf("error syncing Frame start position: %w", err)
 			return
 		}
 
 		// Grab the synced header bytes so we can make sure we have enough data
-		header, err := reader.Peek(40)
+		header, err := reader.Peek(frameHeaderLength)
 		if err != nil {
-			fmt.Errorf("Can't peek into header bytes from buffer: %s", err)
+			fmt.Errorf("can't peek into header bytes from buffer: %w", err)
 			return
 		}
 
@@ -73,12 +73,12 @@ func (f *frameStream) run() {
 		data := make([]byte, int(length))
 		count, err := reader.Read(data)
 		if err != nil {
-			fmt.Errorf("Can't read %d bytes from buffer: %s", length, err)
+			fmt.Errorf("can't read %d bytes from buffer: %w", length, err)
 			return
 		}
 
 		if count != int(length) {
-			fmt.Errorf("Read less data than expected: %d < %d", count, length)
+			fmt.Errorf("read less data than expected: %d < %d", count, length)
 			return
 		}
 
@@ -133,7 +133,7 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 	case "pcap":
 		handle, err = devices.OpenPcap(src, filter, pcap.BlockForever)
 	default:
-		err = ErrDecodingFailure{Err: fmt.Errorf("Unknown input type: %s", mode)}
+		err = ErrDecodingFailure{Err: fmt.Errorf("unknown input type: %s", mode)}
 	}
 
 	if err != nil {

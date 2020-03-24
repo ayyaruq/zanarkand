@@ -1,3 +1,4 @@
+//lint:file-ignore U1000 Ignore unused struct members as they're part of the payload and users may want them
 package zanarkand
 
 import (
