@@ -85,6 +85,6 @@ real need to have explicit versions on Zanarkand itself.
 
 
 ## TODO
-- [ ] better error wrapping (GH#4)
-- [ ] winsock capture from a PID via the TCP table, requires iphlpapi (GH#3)
+- [ ] [better error wrapping](https://github.com/ayyaruq/zanarkand/issues/4)
+- [ ] [winsock capture from a PID via the TCP table, requires iphlpapi](https://github.com/ayyaruq/zanarkand/issues/3)
 - [ ] support fragmented Frames (when a Message spans 2 Frames)
