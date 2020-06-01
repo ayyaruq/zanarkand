@@ -53,13 +53,13 @@ func main() {
 
 // Capture the first 10 Messages sent from the server
 // This ignores Messages sent by the client to the server
-	for i := 0, i < 10; i++ {
+	for i := 0; i < 10; i++ {
 		message := <-subscriber.IngressEvents
 		fmt.Println(message.String())
 	}
 
 	// Stop the sniffer
-	subscriber.Close()
+	subscriber.Close(sniffer)
 }
 ```
 
