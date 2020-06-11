@@ -126,8 +126,8 @@ func TestFrameValidatePredicate(t *testing.T) {
 
 func TestFlowDirection(t *testing.T) {
 	loopback := net.ParseIP("127.0.0.1")
-	private  := net.ParseIP("192.168.1.100")
-	public   := net.ParseIP("124.150.157.158")
+	private := net.ParseIP("192.168.1.100")
+	public := net.ParseIP("124.150.157.158")
 
 	if !isPrivate(loopback) {
 		t.Error("Expected loopback to be private")

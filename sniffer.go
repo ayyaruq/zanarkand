@@ -57,6 +57,7 @@ func (f *frameStream) run() {
 		// Skip to start of a frame
 		err := discardUntilValid(reader)
 		if err != nil {
+			// #nosec G104
 			fmt.Errorf("error syncing Frame start position: %w", err)
 			return
 		}
@@ -64,6 +65,7 @@ func (f *frameStream) run() {
 		// Grab the synced header bytes so we can make sure we have enough data
 		header, err := reader.Peek(frameHeaderLength)
 		if err != nil {
+			// #nosec G104
 			fmt.Errorf("can't peek into header bytes from buffer: %w", err)
 			return
 		}
@@ -73,11 +75,13 @@ func (f *frameStream) run() {
 		data := make([]byte, int(length))
 		count, err := reader.Read(data)
 		if err != nil {
+			// #nosec G104
 			fmt.Errorf("can't read %d bytes from buffer: %w", length, err)
 			return
 		}
 
 		if count != int(length) {
+			// #nosec G104
 			fmt.Errorf("read less data than expected: %d < %d", count, length)
 			return
 		}
@@ -158,7 +162,7 @@ func NewSniffer(mode string, src string) (*Sniffer, error) {
 // Start an initialised Sniffer.
 func (s *Sniffer) Start() error {
 	s.notifier <- true
-	s.Active = <- s.notifier
+	s.Active = <-s.notifier
 	s.Status = "started"
 
 	packets := s.Source.Packets()

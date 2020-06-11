@@ -32,15 +32,18 @@ func ListDeviceNames(printDescription bool, printIP bool) ([]string, error) {
 		}
 
 		if printIP {
-			addresses := "No assigned IP address"
 			if len(dev.Addresses) > 0 {
-				addresses = ""
+				addresses := ""
 				for i, address := range []pcap.InterfaceAddress(dev.Addresses) {
 					if i > 0 {
 						addresses += " "
 					}
 
 					addresses += fmt.Sprintf("%s", address.IP.String())
+				}
+
+				if addresses == "" {
+					addresses = "No assigned IP address"
 				}
 				d += fmt.Sprintf(" [%s]", addresses)
 			}

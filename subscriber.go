@@ -61,7 +61,10 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 
 			if header.Segment == GameEvent {
 				msg := new(GameEventMessage)
-				msg.Decode(r)
+				err = msg.Decode(r)
+				if err != nil {
+					return ErrDecodingFailure{Err: err}
+				}
 
 				switch frame.Direction() {
 				case FrameIngress:
@@ -138,7 +141,10 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 
 			if header.Segment == ServerPing || header.Segment == ServerPong {
 				msg := new(KeepaliveMessage)
-				msg.Decode(r)
+				err = msg.Decode(r)
+				if err != nil {
+					return ErrDecodingFailure{Err: err}
+				}
 
 				k.Events <- msg
 			}
