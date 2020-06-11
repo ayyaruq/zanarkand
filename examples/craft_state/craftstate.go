@@ -28,7 +28,7 @@ type CraftState struct {
 func (CraftState) isEventPlay32Data() {}
 
 // MarshalJSON will override the way Actions and Conditions are shown in JSON
-func (c CraftState) MarshalJSON() ([]byte, error) {
+func (c *CraftState) MarshalJSON() ([]byte, error) {
 	type Alias CraftState
 
 	return json.Marshal(&struct {
@@ -40,7 +40,7 @@ func (c CraftState) MarshalJSON() ([]byte, error) {
 		ActionID:          actionName(c.ActionID),
 		CurrentCondition:  conditionName(c.CurrentCondition),
 		PreviousCondition: conditionName(c.PreviousCondition),
-		Alias:             (Alias)(c),
+		Alias:             Alias(*c),
 	})
 }
 
