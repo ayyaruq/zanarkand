@@ -27,7 +27,7 @@ type CraftState struct {
 
 func (CraftState) isEventPlay32Data() {}
 
-// Override the way Actions and Conditions are shown in JSON
+// MarshalJSON will override the way Actions and Conditions are shown in JSON
 func (c CraftState) MarshalJSON() ([]byte, error) {
 	type Alias CraftState
 
@@ -46,14 +46,18 @@ func (c CraftState) MarshalJSON() ([]byte, error) {
 
 func actionName(id uint32) string {
 	action := actionMap[id]
-	if action == "" { action = strconv.Itoa(int(id)) }
+	if action == "" {
+		action = strconv.Itoa(int(id))
+	}
 
 	return action
 }
 
 func conditionName(id uint32) string {
 	condition := conditionMap[id]
-	if condition == "" { condition = strconv.Itoa(int(id)) }
+	if condition == "" {
+		condition = strconv.Itoa(int(id))
+	}
 
 	return condition
 }

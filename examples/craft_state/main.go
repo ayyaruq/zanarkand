@@ -60,14 +60,18 @@ func fakeMain() int {
 		case inbound := <-subscriber.IngressEvents:
 			if inbound.Opcode == OpcodeEventPlay32 {
 				event := new(EventPlay32)
-				event.UnmarshalBytes(inbound.Body)
+				err := event.UnmarshalBytes(inbound.Body)
+				if err != nil {
+					log.Printf("Error unmarshalling event data: %s", err)
+				}
+
 				if event.EventID == EventIDs["CraftState"] {
 					craftState, ok := event.Data.(*CraftState)
 					if ok {
-						craftEvent := struct{
+						craftEvent := struct {
 							Event EventPlayHeader
 							State *CraftState
-						}{ event.EventPlayHeader, craftState }
+						}{event.EventPlayHeader, craftState}
 
 						text, _ := json.Marshal(craftEvent)
 						log.Println(string(text))
