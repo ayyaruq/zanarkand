@@ -20,7 +20,7 @@ type DeviceHandle interface {
 }
 
 // OpenPcap opens a DeviceHandle for a live PCAP session on a given interface.
-func OpenPcap(device string, filter string, timeout time.Duration) (*pcap.Handle, error) {
+func OpenPcap(device, filter string, timeout time.Duration) (*pcap.Handle, error) {
 	h, err := pcap.OpenLive(device, 1600, true, timeout)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func OpenPcap(device string, filter string, timeout time.Duration) (*pcap.Handle
 }
 
 // OpenFile opens a DeviceHandle for an offline PCAP session with a given input file.
-func OpenFile(file string, filter string) (*pcap.Handle, error) {
+func OpenFile(file, filter string) (*pcap.Handle, error) {
 	h, err := pcap.OpenOffline(file)
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func OpenFile(file string, filter string) (*pcap.Handle, error) {
 // multiples of 25MB are a good size, since 1600 bytes is an even multiple when page sizes
 // are in powers of 2. By default, 128 blocks can fit in 25MB. AF_Packet is only available
 // on Linux systems.
-func OpenAFPacket(device string, filter string, bufferSize int, timeout time.Duration) (*AFPacketHandle, error) {
+func OpenAFPacket(device, filter string, bufferSize int, timeout time.Duration) (*AFPacketHandle, error) {
 	frameSize, blockSize, blockCount, err := afpacketCalculateBuffers(bufferSize, 1600, os.Getpagesize())
 	if err != nil {
 		return nil, err

@@ -13,7 +13,7 @@ var deviceAnySupported = runtime.GOOS == "linux"
 
 // ListDeviceNames returns a list of available network adapters. The printDescription
 // parameter will include the adapter name and printIP will include the IP assigned to it.
-func ListDeviceNames(printDescription bool, printIP bool) ([]string, error) {
+func ListDeviceNames(printDescription, printIP bool) ([]string, error) {
 	devices, err := pcap.FindAllDevs()
 	if err != nil {
 		return nil, err

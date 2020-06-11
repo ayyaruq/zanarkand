@@ -107,7 +107,7 @@ type Sniffer struct {
 }
 
 // NewSniffer creates a Sniffer instance.
-func NewSniffer(mode string, src string) (*Sniffer, error) {
+func NewSniffer(mode, src string) (*Sniffer, error) {
 	// Setup Packet Assembler
 	streamFactory := new(frameStreamFactory)
 	streamPool := tcpassembly.NewStreamPool(streamFactory)

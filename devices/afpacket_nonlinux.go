@@ -13,7 +13,7 @@ import (
 // AFPacketHandle is an implementation of a gopacket PacketSource.
 type AFPacketHandle struct{}
 
-func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount int, timeout time.Duration) (*AFPacketHandle, error) {
+func newAFPacketHandle(device string, frameSize, blockSize, blockCount int, timeout time.Duration) (*AFPacketHandle, error) {
 	return nil, fmt.Errorf("AFPacket handles are only available on Linux")
 }
 

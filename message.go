@@ -138,7 +138,7 @@ func (m *GameEventMessage) MarshalJSON() ([]byte, error) {
 }
 
 // String prints a Segment and IPC Message specific headers.
-func (m GameEventMessage) String() string {
+func (m *GameEventMessage) String() string {
 	return fmt.Sprintf(m.GenericHeader.String()+"Message - server: %v, opcode: 0x%X, timestamp: %v\n",
 		m.ServerID, m.Opcode, m.Timestamp.Unix())
 }

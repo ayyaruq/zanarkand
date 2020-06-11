@@ -6,7 +6,7 @@ import "errors"
 // The block size and block count should add up to as close as possible
 // to the target allocation size. Block size must be divisible by both
 // the frame and page size however. TargetSize is in MB.
-func afpacketCalculateBuffers(targetSize int, snaplen int, pageSize int) (frameSize, blockSize, blockCount int, err error) {
+func afpacketCalculateBuffers(targetSize, snaplen, pageSize int) (frameSize, blockSize, blockCount int, err error) {
 	if snaplen < pageSize {
 		frameSize = pageSize / (pageSize / snaplen)
 	} else {
