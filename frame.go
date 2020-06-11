@@ -12,8 +12,8 @@ import (
 	"github.com/google/gopacket"
 )
 
-var frameHeaderLength = 40
-var frameMagicLE uint64 = 0xE2465DFF41A05252
+const frameHeaderLength = 40
+const frameMagicLE uint64 = 0xE2465DFF41A05252
 
 // FrameIngress is an inbound Frame.
 // FrameEgress is an outbound Frame.
@@ -39,7 +39,7 @@ type Frame struct {
 	reserved3  uint16    // [38:40]
 	Body       []byte    `json:"-"`
 
-	meta FrameMeta
+	meta *FrameMeta
 }
 
 // FrameMeta represents metadata from the IP and TCP layers on the Frame.
@@ -88,6 +88,7 @@ func (f *Frame) Direction() FlowDirection {
 // MarshalJSON provides an override for timestamp handling for encoding/JSON
 func (f *Frame) MarshalJSON() ([]byte, error) {
 	type Alias Frame
+
 	data := make([]int, len(f.Body))
 	for i, b := range f.Body {
 		data[i] = int(b)
@@ -106,7 +107,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 
 // Meta returns the frame metadata, a gopacket.Flow
 // this allows the user to determine if a Frame is inbound or outbound.
-func (f *Frame) Meta() FrameMeta {
+func (f *Frame) Meta() *FrameMeta {
 	return f.meta
 }
 

@@ -44,6 +44,7 @@ func TestHeaderDecode(t *testing.T) {
 	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 
 	header := GenericHeader{}
+
 	err := header.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -66,6 +67,7 @@ func TestHeaderDecode(t *testing.T) {
 	}
 
 	reader.Reset(bytes.NewReader(lalafellLengthKeepaliveBlob))
+
 	shortHeader := GenericHeader{}
 	err = shortHeader.Decode(reader)
 
@@ -87,9 +89,10 @@ func TestHeaderDecode(t *testing.T) {
 
 func TestHeaderStringer(t *testing.T) {
 	var sentinel = "Segment - size: 24, source: 67305985, target: 134678021, segment: 8\n"
-	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 	message := GenericHeader{}
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -105,8 +108,8 @@ func TestHeaderStringer(t *testing.T) {
 func TestGameEventDecode(t *testing.T) {
 	z, _ := zlib.NewReader(bytes.NewReader(compressedGameEventBlob))
 	reader := bufio.NewReader(z)
-
 	message := new(GameEventMessage)
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -137,6 +140,7 @@ func TestGameEventDecode(t *testing.T) {
 	}
 
 	reader.Reset(bytes.NewReader(lalafellLengthGameEventBlob))
+
 	shortMessage := new(GameEventMessage)
 	err = shortMessage.Decode(reader)
 
@@ -157,10 +161,12 @@ func TestGameEventDecode(t *testing.T) {
 
 func TestGameEventMarshal(t *testing.T) {
 	var sentinel = `{"data":[94,76,1,0,16,39,0,0,218,2,126,221,255,127,0,0],"timestamp":1580625008,"size":48,"sourceActorID":274215394,"targetActorID":275307576,"segmentType":3,"opcode":293,"serverID":3}`
+
 	z, _ := zlib.NewReader(bytes.NewReader(compressedGameEventBlob))
 	reader := bufio.NewReader(z)
 
 	message := new(GameEventMessage)
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -178,10 +184,12 @@ func TestGameEventMarshal(t *testing.T) {
 
 func TestGameEventStringer(t *testing.T) {
 	var sentinel = "Segment - size: 48, source: 274215394, target: 275307576, segment: 3\nMessage - server: 3, opcode: 0x125, timestamp: 1580625008\n"
+
 	z, _ := zlib.NewReader(bytes.NewReader(compressedGameEventBlob))
 	reader := bufio.NewReader(z)
 
 	message := new(GameEventMessage)
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -196,8 +204,8 @@ func TestGameEventStringer(t *testing.T) {
 
 func TestKeepaliveDecode(t *testing.T) {
 	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
-
 	message := KeepaliveMessage{}
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -228,6 +236,7 @@ func TestKeepaliveDecode(t *testing.T) {
 	}
 
 	reader.Reset(bytes.NewReader(lalafellLengthKeepaliveBlob))
+
 	shortMessage := new(KeepaliveMessage)
 	err = shortMessage.Decode(reader)
 
@@ -248,9 +257,10 @@ func TestKeepaliveDecode(t *testing.T) {
 
 func TestKeepaliveMarshal(t *testing.T) {
 	var sentinel = `{"size":24,"sourceActorID":67305985,"targetActorID":134678021,"segmentType":8,"ID":123456789}`
-	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 	message := KeepaliveMessage{}
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -268,9 +278,10 @@ func TestKeepaliveMarshal(t *testing.T) {
 
 func TestKeepaliveStringer(t *testing.T) {
 	var sentinel = "Segment - size: 24, source: 67305985, target: 134678021, segment: 8\nMessage - ID: 123456789, timestamp: 1485430850\n"
-	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 
+	reader := bufio.NewReader(bytes.NewReader(decompressedKeepaliveBlob))
 	message := KeepaliveMessage{}
+
 	err := message.Decode(reader)
 	if err != nil {
 		t.Errorf(err.Error())

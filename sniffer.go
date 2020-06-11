@@ -73,6 +73,7 @@ func (f *frameStream) run() {
 		// Make a buffer for the full Frame size
 		length := binary.LittleEndian.Uint32(header[24:28])
 		data := make([]byte, int(length))
+
 		count, err := reader.Read(data)
 		if err != nil {
 			// #nosec G104
@@ -88,7 +89,6 @@ func (f *frameStream) run() {
 
 		reassembledChan <- reassembledPacket{Body: data, Flow: f.net}
 	}
-
 }
 
 // Sniffer is a representation of a packet source, filter, and destination.
@@ -121,6 +121,7 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 	// Setup handle and filter
 	var err error
 	var handle devices.DeviceHandle
+
 	var filter = "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551"
 
 	if src == "" {
@@ -167,6 +168,7 @@ func (s *Sniffer) Start() error {
 
 	packets := s.Source.Packets()
 	ticker := time.NewTicker(3 * time.Second)
+
 	defer ticker.Stop()
 
 	for s.Active {
@@ -177,8 +179,10 @@ func (s *Sniffer) Start() error {
 			if !state {
 				s.Status = "stopped"
 				s.assembler.FlushAll()
+
 				return nil
 			}
+
 			s.Status = "running"
 
 		case packet := <-packets:

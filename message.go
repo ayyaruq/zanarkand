@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var gameEventMessageHeaderLength = 32
+const gameEventMessageHeaderLength = 32
 
 // Segment types separate messages into their relevant field maps.
 // Session/Encryption types are not implemented due to them largely only
@@ -90,6 +90,7 @@ func (GameEventMessage) IsMessage() {}
 // Decode turns a byte payload into a real GameEventMessage.
 func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 	header := GenericHeader{}
+
 	err := header.Decode(r)
 	if err != nil {
 		return err
@@ -121,6 +122,7 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 // MarshalJSON provides an override for timestamp handling for encoding/JSON
 func (m *GameEventMessage) MarshalJSON() ([]byte, error) {
 	type Alias GameEventMessage
+
 	data := make([]int, len(m.Body))
 	for i, b := range m.Body {
 		data[i] = int(b)
@@ -156,6 +158,7 @@ func (KeepaliveMessage) IsMessage() {}
 // Decode turns a byte payload into a real KeepaliveMessage.
 func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
 	header := GenericHeader{}
+
 	err := header.Decode(r)
 	if err != nil {
 		return err
@@ -184,6 +187,7 @@ func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
 // MarshalJSON provides an override for timestamp handling for encoding/JSON
 func (m *KeepaliveMessage) MarshalJSON() ([]byte, error) {
 	type Alias KeepaliveMessage
+
 	return json.Marshal(&struct {
 		Timestamp int32 `json:"timestamp"`
 		*Alias

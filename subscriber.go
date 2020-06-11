@@ -41,6 +41,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 
 		// Setup our Message reader
 		r := bufio.NewReader(bytes.NewReader(frame.Body))
+
 		if frame.Compressed {
 			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
 			if err != nil {
@@ -54,6 +55,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 
 		for i := 0; i < int(frame.Count); i++ {
 			header := new(GenericHeader)
+
 			err := header.Decode(r)
 			if err != nil {
 				return ErrDecodingFailure{Err: err}
@@ -61,6 +63,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 
 			if header.Segment == GameEvent {
 				msg := new(GameEventMessage)
+
 				err = msg.Decode(r)
 				if err != nil {
 					return ErrDecodingFailure{Err: err}
@@ -121,6 +124,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 
 		// Setup our Message reader
 		r := bufio.NewReader(bytes.NewReader(frame.Body))
+
 		if frame.Compressed {
 			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
 			if err != nil {
@@ -134,6 +138,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 
 		for i := 0; i < int(frame.Count); i++ {
 			header := new(GenericHeader)
+
 			err := header.Decode(r)
 			if err != nil {
 				return ErrDecodingFailure{Err: err}
@@ -141,6 +146,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 
 			if header.Segment == ServerPing || header.Segment == ServerPong {
 				msg := new(KeepaliveMessage)
+
 				err = msg.Decode(r)
 				if err != nil {
 					return ErrDecodingFailure{Err: err}

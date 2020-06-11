@@ -20,6 +20,7 @@ func ListDeviceNames(printDescription, printIP bool) ([]string, error) {
 	}
 
 	list := []string{}
+
 	for _, dev := range devices {
 		d := dev.Name
 
@@ -28,25 +29,25 @@ func ListDeviceNames(printDescription, printIP bool) ([]string, error) {
 			if len(dev.Description) > 0 {
 				desc = dev.Description
 			}
+
 			d += fmt.Sprintf(": %s", desc)
 		}
 
-		if printIP {
-			if len(dev.Addresses) > 0 {
-				addresses := ""
-				for i, address := range []pcap.InterfaceAddress(dev.Addresses) {
-					if i > 0 {
-						addresses += " "
-					}
-
-					addresses += fmt.Sprintf("%s", address.IP.String())
+		if printIP && len(dev.Addresses) > 0 {
+			addresses := ""
+			for i, address := range []pcap.InterfaceAddress(dev.Addresses) {
+				if i > 0 {
+					addresses += " "
 				}
 
-				if addresses == "" {
-					addresses = "No assigned IP address"
-				}
-				d += fmt.Sprintf(" [%s]", addresses)
+				addresses += address.IP.String()
 			}
+
+			if addresses == "" {
+				addresses = "No assigned IP address"
+			}
+
+			d += fmt.Sprintf(" [%s]", addresses)
 		}
 
 		list = append(list, d)
