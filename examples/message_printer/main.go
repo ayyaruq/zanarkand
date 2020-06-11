@@ -16,7 +16,7 @@ func main() {
 
 func fakeMain() int {
 	// Setup program control
-	var gracefulStop = make(chan os.Signal)
+	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 	// Load inputs
@@ -55,7 +55,12 @@ func fakeMain() int {
 
 	// Don't block the Sniffer
 	log.Println("Starting sniffer from source", src)
-	go subscriber.Subscribe(sniffer)
+	go func() {
+		err := subscriber.Subscribe(sniffer)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	for {
 		select {

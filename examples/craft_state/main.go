@@ -20,7 +20,7 @@ func main() {
 
 func fakeMain() int {
 	// Setup program control
-	var gracefulStop = make(chan os.Signal)
+	gracefulStop := make(chan os.Signal, 1)
 	signal.Notify(gracefulStop, syscall.SIGTERM, syscall.SIGINT)
 
 	// Load inputs
