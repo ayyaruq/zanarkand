@@ -39,7 +39,7 @@ type Frame struct {
 	reserved3  uint16    // [38:40]
 	Body       []byte    `json:"-"`
 
-	meta *FrameMeta
+	meta FrameMeta
 }
 
 // FrameMeta represents metadata from the IP and TCP layers on the Frame.
@@ -108,7 +108,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 // Meta returns the frame metadata, a gopacket.Flow
 // this allows the user to determine if a Frame is inbound or outbound.
 func (f *Frame) Meta() *FrameMeta {
-	return f.meta
+	return &f.meta
 }
 
 // String provides a string representation of a frame header.
