@@ -122,7 +122,7 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 	var err error
 	var handle devices.DeviceHandle
 
-	var filter = "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551"
+	var filter = "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551 and not src port 443 and not dst port 443"
 
 	if src == "" {
 		return nil, fmt.Errorf("capture handle: no source provided")
