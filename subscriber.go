@@ -5,12 +5,28 @@ import (
 	"bytes"
 	"compress/zlib"
 	"fmt"
+	"io"
+	"sync"
 )
 
 // Subscriber describes the interface for individual Frame segment subscribers.
 type Subscriber interface {
 	Subscribe(*Sniffer)
 	Close()
+}
+
+type readerPool struct {
+	body sync.Pool
+	bare sync.Pool
+	zlib sync.Pool
+}
+
+func newReaderPool() *readerPool {
+	return &readerPool{
+		body: sync.Pool{New: func() interface{} { return bytes.NewReader(nil) }},
+		bare: sync.Pool{New: func() interface{} { return bufio.NewReader(nil) }},
+		zlib: sync.Pool{},
+	}
 }
 
 // GameEventSubscriber is a Subscriber for GameEvent segments.
@@ -33,6 +49,8 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 		go s.Start()
 	}
 
+	pool := newReaderPool()
+
 	for {
 		frame, err := s.NextFrame()
 		if err != nil {
@@ -40,17 +58,31 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 		}
 
 		// Setup our Message reader
-		r := bufio.NewReader(bytes.NewReader(frame.Body))
+		b := pool.body.Get().(*bytes.Reader)
+		if b != nil {
+			b.Reset(frame.Body)
+		}
 
-		if frame.Compressed {
-			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
+		r := pool.bare.Get().(*bufio.Reader)
+		if r != nil {
+			r.Reset(b)
+		}
+
+		z := pool.zlib.Get().(io.ReadCloser)
+		if z != nil {
+			err = z.(zlib.Resetter).Reset(b, nil)
+			if err != nil {
+				return fmt.Errorf("error resetting ZLIB decoder: %w", err)
+			}
+		} else {
+			z, err = zlib.NewReader(b)
 			if err != nil {
 				return fmt.Errorf("error creating ZLIB decoder: %w", err)
 			}
+		}
 
-			defer z.Close()
-
-			r.Reset(z)
+		if frame.Compressed {
+			r.Reset(z.(io.ReadCloser))
 		}
 
 		for i := 0; i < int(frame.Count); i++ {
@@ -82,9 +114,13 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 			}
 		}
 
-		// We're done with the current frame,
-		// if Sniffer is stopped then exit and
-		// user can start a new subscriber routine.
+		// Return our readers to the pool - the pool will get GC'd when the function exits
+		pool.zlib.Put(z)
+		pool.bare.Put(r)
+		pool.body.Put(b)
+
+		// We're done with the current frame, if Sniffer is stopped then exit,
+		// allowing user to start a new subscriber routine.
 		if !s.Active {
 			return nil
 		}
@@ -116,6 +152,8 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 		go s.Start()
 	}
 
+	pool := newReaderPool()
+
 	for {
 		frame, err := s.NextFrame()
 		if err != nil {
@@ -123,17 +161,31 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 		}
 
 		// Setup our Message reader
-		r := bufio.NewReader(bytes.NewReader(frame.Body))
+		b := pool.body.Get().(*bytes.Reader)
+		if b != nil {
+			b.Reset(frame.Body)
+		}
 
-		if frame.Compressed {
-			z, err := zlib.NewReader(bytes.NewReader(frame.Body))
+		r := pool.bare.Get().(*bufio.Reader)
+		if r != nil {
+			r.Reset(b)
+		}
+
+		z := pool.zlib.Get().(io.ReadCloser)
+		if z != nil {
+			err = z.(zlib.Resetter).Reset(b, nil)
+			if err != nil {
+				return fmt.Errorf("error resetting ZLIB decoder: %w", err)
+			}
+		} else {
+			z, err = zlib.NewReader(b)
 			if err != nil {
 				return fmt.Errorf("error creating ZLIB decoder: %w", err)
 			}
+		}
 
-			defer z.Close()
-
-			r.Reset(z)
+		if frame.Compressed {
+			r.Reset(z.(io.ReadCloser))
 		}
 
 		for i := 0; i < int(frame.Count); i++ {
@@ -155,6 +207,11 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 				k.Events <- msg
 			}
 		}
+
+		// Return our readers to the pool
+		pool.zlib.Put(z)
+		pool.bare.Put(r)
+		pool.body.Put(b)
 
 		if !s.Active {
 			return nil
