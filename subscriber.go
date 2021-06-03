@@ -209,6 +209,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 		}
 
 		// Return our readers to the pool
+		z.Close()
 		pool.zlib.Put(z)
 		pool.bare.Put(r)
 		pool.body.Put(b)
