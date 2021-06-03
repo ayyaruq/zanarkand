@@ -32,6 +32,7 @@ func fakeMain() int {
 	case "file":
 		src = *file
 	case "pcap":
+		src = *inet
 	default:
 		src = *inet
 	}
