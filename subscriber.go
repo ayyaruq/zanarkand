@@ -115,6 +115,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 		}
 
 		// Return our readers to the pool - the pool will get GC'd when the function exits
+		z.Close()
 		pool.zlib.Put(z)
 		pool.bare.Put(r)
 		pool.body.Put(b)
