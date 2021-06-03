@@ -17,3 +17,7 @@
 
 # Debugging objects
 *.pcap
+
+# Example binaries
+/examples/**/*
+!/examples/**/*.go
