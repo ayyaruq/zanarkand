@@ -1,12 +1,10 @@
 # Zanarkand
 
 [![Build Status](https://img.shields.io/github/workflow/status/ayyaruq/zanarkand/Go%20Test)](https://github.com/ayyaruq/zanarkand/actions)
-[![Dependencies](https://img.shields.io/librariesio/github/ayyaruq/zanarkand)](https://libraries.io/github/ayyaruq/zanarkand)
 [![Code Quality](https://goreportcard.com/badge/github.com/ayyaruq/zanarkand)](https://goreportcard.com/report/github.com/ayyaruq/zanarkand)
 [![GitHub Issues](https://img.shields.io/github/issues/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/pulls)
 [![GitHub License](https://img.shields.io/github/license/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/blob/master/LICENSE)
-![Programming Language](https://img.shields.io/github/languages/top/ayyaruq/zanarkand)
 [![Discord](https://img.shields.io/discord/479945159203880960?color=7289da&label=discord&logo=discordo)](https://discord.gg/fwUwjB5)
 
 Zanarkand is a library to read FFXIV network traffic from PCAP, AF_Packet, or PCAP files. It can
