@@ -1,14 +1,21 @@
 # Go params
 GOCMD=go
 GOCLEAN=$(GOCMD) clean
-GOTEST=$(GOCMD) test
+GOFMT=gofmt
 GOGET=$(GOCMD) get
+GOTEST=$(GOCMD) test
 
-all: deps test
+all: deps fmt test
+
+fmt:
+	$(GOFMT) -s -l .
+
 test:
 	$(GOTEST) -cover -v ./...
+
 clean:
 	$(GOCLEAN)
+
 deps:
 	$(GOGET) -u
 

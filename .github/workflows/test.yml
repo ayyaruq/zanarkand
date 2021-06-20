@@ -5,12 +5,12 @@ jobs:
     name: test
     strategy:
       matrix:
-        operating-system: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.operating-system }}
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
     - name: Setup system libraries
-      if: matrix.operating-system == 'ubuntu-latest'
+      if: matrix.os == 'ubuntu-latest'
       run: sudo apt update && sudo apt install -y --no-install-recommends libpcap-dev
 
     - name: Set up Go 1.13
@@ -29,6 +29,10 @@ jobs:
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
         restore-keys: |
           ${{ runner.os }}-go-
+
+    - name: Format
+      if: matrix.os == 'ubuntu-latest'
+      run: if [ "$(make -s fmt | wc -l)" -gt 0]; then exit 1; fi
 
     - name: Test
       run: make test
