@@ -11,7 +11,7 @@ fmt:
 	$(GOFMT) -s -l .
 
 test:
-	$(GOTEST) -cover -v ./...
+	$(GOTEST) -cover -v $$($(GOCMD) list ./... | grep -v examples)
 
 clean:
 	$(GOCLEAN)
