@@ -59,6 +59,7 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 
 	case "pcap":
 		handle, err = devices.OpenPcap(src, filter, pcap.BlockForever)
+
 	default:
 		err = ErrDecodingFailure{Err: fmt.Errorf("unknown input type: %s", mode)}
 	}
