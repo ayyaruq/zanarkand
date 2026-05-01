@@ -43,7 +43,9 @@ var zlibFrameTestBlob = append(headerTestBlob, zlibBodyTestBlob...)
 
 func TestFrameDecode(t *testing.T) {
 	frame := new(Frame)
-	frame.Decode(zlibFrameTestBlob)
+	if err := frame.Decode(zlibFrameTestBlob); err != nil {
+		t.Fatal(err)
+	}
 
 	if frame.Length != 92 {
 		t.Errorf("Expected frame length 92, got %v", frame.Length)
@@ -74,7 +76,9 @@ func TestFrameMarshal(t *testing.T) {
 	var sentinel = `{"data":[120,156,51,96,96,96,40,139,80,19,88,51,69,81,128,25,200,22,97,112,101,100,96,96,101,216,116,43,62,6,200,101,136,217,200,192,192,97,242,130,217,95,212,129,17,196,7,0,205,193,8,40],"timestamp":1549785778,"size":92,"connectionType":0,"count":1,"compression":1}`
 
 	frame := new(Frame)
-	frame.Decode(zlibFrameTestBlob)
+	if err := frame.Decode(zlibFrameTestBlob); err != nil {
+		t.Fatal(err)
+	}
 
 	serialised, err := json.Marshal(frame)
 	if err != nil {
@@ -90,7 +94,9 @@ func TestFrameStringer(t *testing.T) {
 	var sentinel = "Frame - magic: 0xE2465DFF41A05252, timestamp: 1549785778, size: 92, count: 1, compression: ZLib, connection: 0"
 
 	frame := new(Frame)
-	frame.Decode(zlibFrameTestBlob)
+	if err := frame.Decode(zlibFrameTestBlob); err != nil {
+		t.Fatal(err)
+	}
 
 	stringy := frame.String()
 

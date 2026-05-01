@@ -83,7 +83,11 @@ type FrameMeta struct {
 }
 
 // Decode a frame from byte data
-func (f *Frame) Decode(p []byte) {
+func (f *Frame) Decode(p []byte) error {
+	if len(p) < frameHeaderLength {
+		return ErrNotEnoughData{Expected: frameHeaderLength, Received: len(p)}
+	}
+
 	// Keep the magic alive
 	f.Magic = binary.LittleEndian.Uint64(p[0:8])
 
@@ -98,6 +102,8 @@ func (f *Frame) Decode(p []byte) {
 	f.Count = binary.LittleEndian.Uint16(p[30:32])
 
 	f.Body = p[frameHeaderLength:f.Length]
+
+	return nil
 }
 
 // Direction outputs if the Frame is inbound or outbound.

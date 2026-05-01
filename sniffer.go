@@ -143,7 +143,9 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 	// Setup our Frame
 	frame := new(Frame)
 
-	frame.Decode(data.Body)
+	if err := frame.Decode(data.Body); err != nil {
+		return nil, err
+	}
 
 	if int(frame.Length) != len(data.Body) {
 		return nil, ErrNotEnoughData{Expected: len(data.Body), Received: int(frame.Length)}
