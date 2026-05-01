@@ -15,6 +15,14 @@ import (
 const frameHeaderLength = 40
 const frameMagicLE uint64 = 0xE2465DFF41A05252
 
+const (
+	FrameCompressionNone  = 0
+	FrameCompressionZlib  = 1
+	FrameCompressionOodle = 2
+)
+
+type Compressor uint8
+
 // FrameIngress is an inbound Frame.
 // FrameEgress is an outbound Frame.
 const (
@@ -28,18 +36,31 @@ type FlowDirection int
 // Frame is an FFXIV bundled message encapsulation layer.
 // Currently, bytes 4:7, 8:15, 32, and 34:39 are unknown.
 type Frame struct {
-	Magic      uint64    `json:"-"`              // [0:8] - mainly to verify magic bytes
-	Timestamp  time.Time `json:"-"`              // [16:24] - timestamp in milliseconds since epoch
-	Length     uint32    `json:"size"`           // [24:28]
-	Connection uint16    `json:"connectionType"` // [28:30] - 0 lobby, 1 zone, 2 chat
-	Count      uint16    `json:"count"`          // [30:32]
-	reserved1  byte      // [32]
-	Compressed bool      `json:"compressed"` // [33] UINT8 bool tho
-	reserved2  uint32    // [34:38]
-	reserved3  uint16    // [38:40]
-	Body       []byte    `json:"-"`
+	Magic       uint64     `json:"-"`              // [0:8] - mainly to verify magic bytes
+	Timestamp   time.Time  `json:"-"`              // [16:24] - timestamp in milliseconds since epoch
+	Length      uint32     `json:"size"`           // [24:28]
+	Connection  uint16     `json:"connectionType"` // [28:30] - 0 lobby, 1 zone, 2 chat
+	Count       uint16     `json:"count"`          // [30:32]
+	reserved1   byte       // [32]
+	Compression Compressor `json:"compression"` // [33] UINT8 - 0 none, 1 zlib, 2 untrained oodle, 3 trained oodle?
+	reserved2   uint32     // [34:38]
+	reserved3   uint16     // [38:40]
+	Body        []byte     `json:"-"`
 
 	meta FrameMeta
+}
+
+func (c Compressor) String() string {
+	switch c {
+	case FrameCompressionNone:
+		return "None"
+	case FrameCompressionZlib:
+		return "ZLib"
+	case FrameCompressionOodle:
+		return "Oodle"
+	default:
+		return "Unknown"
+	}
 }
 
 // FrameMeta represents metadata from the IP and TCP layers on the Frame.
@@ -59,7 +80,7 @@ func (f *Frame) Decode(p []byte) {
 	// Remaining fields
 	f.Length = binary.LittleEndian.Uint32(p[24:28])
 	f.Connection = binary.LittleEndian.Uint16(p[28:30])
-	f.Compressed = p[33] != 0
+	f.Compression = Compressor(p[33])
 	f.Count = binary.LittleEndian.Uint16(p[30:32])
 
 	f.Body = p[frameHeaderLength:f.Length]
@@ -113,8 +134,8 @@ func (f *Frame) Meta() *FrameMeta {
 
 // String provides a string representation of a frame header.
 func (f *Frame) String() string {
-	return fmt.Sprintf("Frame - magic: 0x%X, timestamp: %v, size: %v, count: %v, compressed: %t, connection: %v",
-		f.Magic, f.Timestamp.Unix(), f.Length, f.Count, f.Compressed, f.Connection)
+	return fmt.Sprintf("Frame - magic: 0x%X, timestamp: %v, size: %v, count: %v, compression: %s, connection: %v",
+		f.Magic, f.Timestamp.Unix(), f.Length, f.Count, f.Compression.String(), f.Connection)
 }
 
 func discardUntilValid(r *bufio.Reader) error {

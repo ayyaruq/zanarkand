@@ -18,7 +18,7 @@ var headerTestBlob = []byte{
 	0x7F, 0x2A, 0x64, 0x4D, 0x7B, 0x99, 0xC4, 0x75, // padding
 	0x81, 0x48, 0x6E, 0xD6, 0x68, 0x01, 0x00, 0x00, // time
 	0x5C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // length, connection, count
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved, compressed, padding
+	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved, compression, padding
 }
 
 var badJujuTestBlob = []byte{
@@ -26,7 +26,7 @@ var badJujuTestBlob = []byte{
 	0x7F, 0x2A, 0x64, 0x4D, 0x7B, 0x99, 0xC4, 0x75, // padding
 	0x81, 0x48, 0x6E, 0xD6, 0x68, 0x01, 0x00, 0x00, // time
 	0x5C, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, // length, connection, count
-	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved, compressed, padding
+	0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // reserved, compression, padding
 }
 
 var zlibBodyTestBlob = []byte{
@@ -57,8 +57,8 @@ func TestFrameDecode(t *testing.T) {
 		t.Errorf("Expected 1 message in this frame, got %v", frame.Count)
 	}
 
-	if !frame.Compressed {
-		t.Error("Expected compressed frame, got uncompressed")
+	if frame.Compression != FrameCompressionZlib {
+		t.Errorf("Expected ZLib compressed frame, got %v", frame.Compression.String())
 	}
 
 	if frame.Timestamp != time.Unix(int64(1549785778), int64(305000000)) {
@@ -71,7 +71,7 @@ func TestFrameDecode(t *testing.T) {
 }
 
 func TestFrameMarshal(t *testing.T) {
-	var sentinel = `{"data":[120,156,51,96,96,96,40,139,80,19,88,51,69,81,128,25,200,22,97,112,101,100,96,96,101,216,116,43,62,6,200,101,136,217,200,192,192,97,242,130,217,95,212,129,17,196,7,0,205,193,8,40],"timestamp":1549785778,"size":92,"connectionType":0,"count":1,"compressed":true}`
+	var sentinel = `{"data":[120,156,51,96,96,96,40,139,80,19,88,51,69,81,128,25,200,22,97,112,101,100,96,96,101,216,116,43,62,6,200,101,136,217,200,192,192,97,242,130,217,95,212,129,17,196,7,0,205,193,8,40],"timestamp":1549785778,"size":92,"connectionType":0,"count":1,"compression":1}`
 
 	frame := new(Frame)
 	frame.Decode(zlibFrameTestBlob)
@@ -87,7 +87,7 @@ func TestFrameMarshal(t *testing.T) {
 }
 
 func TestFrameStringer(t *testing.T) {
-	var sentinel = "Frame - magic: 0xE2465DFF41A05252, timestamp: 1549785778, size: 92, count: 1, compressed: true, connection: 0"
+	var sentinel = "Frame - magic: 0xE2465DFF41A05252, timestamp: 1549785778, size: 92, count: 1, compression: ZLib, connection: 0"
 
 	frame := new(Frame)
 	frame.Decode(zlibFrameTestBlob)

@@ -81,7 +81,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 			}
 		}
 
-		if frame.Compressed {
+		if frame.Compression == FrameCompressionZlib {
 			r.Reset(z.(io.ReadCloser))
 		}
 
@@ -185,7 +185,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 			}
 		}
 
-		if frame.Compressed {
+		if frame.Compression == FrameCompressionZlib {
 			r.Reset(z.(io.ReadCloser))
 		}
 
