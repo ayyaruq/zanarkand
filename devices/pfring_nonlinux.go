@@ -10,23 +10,23 @@ import (
 	"github.com/gopacket/gopacket/layers"
 )
 
-const nolinux = "PF_RING handles are only available on Linux"
+const pf_nolinux = "PF_RING handles are only available on Linux"
 
 // PFRingHandle is a stub for non-Linux platforms.
 type PFRingHandle struct{}
 
 func newPFRingHandle(device string, snaplen uint32, timeout time.Duration) (*PFRingHandle, error) {
-	return nil, fmt.Errorf(nolinux)
+	return nil, fmt.Errorf(pf_nolinux)
 }
 
 // ReadPacketData is an implementation of a gopacket PacketSource's ReadPacketData method.
 func (h *PFRingHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
-	return data, ci, fmt.Errorf(nolinux)
+	return data, ci, fmt.Errorf(pf_nolinux)
 }
 
 // SetBPFFilter is an implementation of a gopacket PacketSource's SetBPFFilter method.
 func (h *PFRingHandle) SetBPFFilter(filter string) error {
-	return fmt.Errorf(nolinux)
+	return fmt.Errorf(pf_nolinux)
 }
 
 // LinkType is an implementation of a gopacket PacketSource's LinkType method.

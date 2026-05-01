@@ -10,23 +10,23 @@ import (
 	"github.com/gopacket/gopacket/layers"
 )
 
-const nolinux = "AF_PACKET handles are only available on Linux"
+const af_nolinux = "AF_PACKET handles are only available on Linux"
 
 // AFPacketHandle is an implementation of a gopacket PacketSource.
 type AFPacketHandle struct{}
 
 func newAFPacketHandle(device string, frameSize, blockSize, blockCount int, timeout time.Duration) (*AFPacketHandle, error) {
-	return nil, fmt.Errorf(nolinux)
+	return nil, fmt.Errorf(af_nolinux)
 }
 
 // ReadPacketData is an implementation of a gopacket PacketSource's ReadPacketData method.
 func (h *AFPacketHandle) ReadPacketData() (data []byte, ci gopacket.CaptureInfo, err error) {
-	return data, ci, fmt.Errorf(nolinux)
+	return data, ci, fmt.Errorf(af_nolinux)
 }
 
 // SetBPFFilter is an implementation of a gopacket PacketSource's SetBPFFilter method.
 func (h *AFPacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
-	return fmt.Errorf(nolinux)
+	return fmt.Errorf(af_nolinux)
 }
 
 // LinkType is an implementation of a gopacket PacketSource's LinkType method.
