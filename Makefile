@@ -5,7 +5,7 @@ GOFMT=gofmt
 GOGET=$(GOCMD) get
 GOTEST=$(GOCMD) test
 
-all: deps fmt test
+all: fmt test
 
 fmt:
 	$(GOFMT) -s -l .
