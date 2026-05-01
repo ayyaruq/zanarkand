@@ -1,9 +1,10 @@
 module github.com/ayyaruq/zanarkand
 
-go 1.13
+go 1.24.0
 
 require (
-	github.com/google/gopacket v1.1.19
-	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
-	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40 // indirect
+	github.com/gopacket/gopacket v1.5.0
+	golang.org/x/net v0.39.0
 )
+
+require golang.org/x/sys v0.32.0 // indirect

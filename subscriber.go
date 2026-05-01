@@ -23,8 +23,8 @@ type readerPool struct {
 
 func newReaderPool() *readerPool {
 	return &readerPool{
-		body: sync.Pool{New: func() interface{} { return bytes.NewReader(nil) }},
-		bare: sync.Pool{New: func() interface{} { return bufio.NewReader(nil) }},
+		body: sync.Pool{New: func() any { return bytes.NewReader(nil) }},
+		bare: sync.Pool{New: func() any { return bufio.NewReader(nil) }},
 		zlib: sync.Pool{},
 	}
 }

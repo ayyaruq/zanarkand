@@ -47,7 +47,7 @@ func TestHeaderDecode(t *testing.T) {
 
 	err := header.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if header.Length != 24 {
@@ -74,7 +74,7 @@ func TestHeaderDecode(t *testing.T) {
 	// This is fucking dumb, for some reason errors.As() doesn't work here
 	typedErr, ok := err.(ErrNotEnoughData)
 	if !ok {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if err.Error() != "Not enough data: Expected 16 bytes but received 12: EOF" {
@@ -95,7 +95,7 @@ func TestHeaderStringer(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	stringy := message.String()
@@ -112,7 +112,7 @@ func TestGameEventDecode(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if message.Length != 48 {
@@ -146,7 +146,7 @@ func TestGameEventDecode(t *testing.T) {
 
 	typedErr, ok := err.(ErrNotEnoughData)
 	if !ok {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if err.Error() != "Not enough data: Expected 48 bytes but received 16: EOF" {
@@ -169,7 +169,7 @@ func TestGameEventMarshal(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	serialised, err := json.Marshal(message)
@@ -192,7 +192,7 @@ func TestGameEventStringer(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	stringy := message.String()
@@ -208,7 +208,7 @@ func TestKeepaliveDecode(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if message.Length != 24 {
@@ -242,7 +242,7 @@ func TestKeepaliveDecode(t *testing.T) {
 
 	typedErr, ok := err.(ErrNotEnoughData)
 	if !ok {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	if err.Error() != "Not enough data: Expected 16 bytes but received 12: EOF" {
@@ -263,7 +263,7 @@ func TestKeepaliveMarshal(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	serialised, err := json.Marshal(message)
@@ -284,7 +284,7 @@ func TestKeepaliveStringer(t *testing.T) {
 
 	err := message.Decode(reader)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("%s", err.Error())
 	}
 
 	stringy := message.String()

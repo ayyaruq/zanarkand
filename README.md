@@ -64,7 +64,7 @@ func main() {
 
 ## Developing
 
-To start, install Go 1.13 or later. For ease of error handling, the Go 1.13 error wrapping features are used and so this
+To start, install Go 1.24 or later. For ease of error handling, the Go 1.13 error wrapping features are used and so this
 is the minimum supported version.
 
 To add to your project, simple `go mod init` if you don't already have a `go.mod` file, and then
