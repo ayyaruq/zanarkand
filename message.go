@@ -9,8 +9,6 @@ import (
 	"time"
 )
 
-const gameEventMessageHeaderLength = 32
-
 // Segment types separate messages into their relevant field maps.
 // Session/Encryption types are not implemented due to them largely only
 // containing the player ID, or information that should be kept hidden due
@@ -63,6 +61,8 @@ func (m *GenericHeader) Decode(r *bufio.Reader) error {
 	m.Segment = binary.LittleEndian.Uint16(data[12:14])
 	m.padding = binary.LittleEndian.Uint16(data[14:16])
 
+	_, _ = r.Discard(16)
+
 	return nil
 }
 
@@ -97,11 +97,12 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 	}
 
 	length := int(header.Length)
-	data, err := r.Peek(length)
+	remaining := length - 16
+	data, err := r.Peek(remaining)
 	lengthBytes := len(data)
 
 	if err != nil {
-		return ErrNotEnoughData{Expected: length, Received: lengthBytes, Err: err}
+		return ErrNotEnoughData{Expected: remaining, Received: lengthBytes, Err: err}
 	}
 
 	defer func() {
@@ -110,11 +111,11 @@ func (m *GameEventMessage) Decode(r *bufio.Reader) error {
 	}()
 
 	m.GenericHeader = header
-	m.reserved = binary.LittleEndian.Uint16(data[16:18])
-	m.Opcode = binary.LittleEndian.Uint16(data[18:20])
-	m.ServerID = binary.LittleEndian.Uint16(data[22:24])
-	m.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(data[24:28])), 0)
-	m.Body = data[gameEventMessageHeaderLength:length]
+	m.reserved = binary.LittleEndian.Uint16(data[0:2])
+	m.Opcode = binary.LittleEndian.Uint16(data[2:4])
+	m.ServerID = binary.LittleEndian.Uint16(data[6:8])
+	m.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(data[8:12])), 0)
+	m.Body = data[16:]
 
 	return nil
 }
@@ -141,7 +142,7 @@ func (m *GameEventMessage) MarshalJSON() ([]byte, error) {
 
 // String prints a Segment and IPC Message specific headers.
 func (m *GameEventMessage) String() string {
-	return fmt.Sprintf(m.GenericHeader.String()+"Message - server: %v, opcode: 0x%X, timestamp: %v\n",
+	return m.GenericHeader.String() + fmt.Sprintf("Message - server: %v, opcode: 0x%X, timestamp: %v\n",
 		m.ServerID, m.Opcode, m.Timestamp.Unix())
 }
 
@@ -165,11 +166,12 @@ func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
 	}
 
 	length := int(header.Length)
-	data, err := r.Peek(length)
+	remaining := length - 16
+	data, err := r.Peek(remaining)
 	lengthBytes := len(data)
 
 	if err != nil {
-		return ErrNotEnoughData{Expected: length, Received: lengthBytes, Err: err}
+		return ErrNotEnoughData{Expected: remaining, Received: lengthBytes, Err: err}
 	}
 
 	defer func() {
@@ -178,8 +180,8 @@ func (m *KeepaliveMessage) Decode(r *bufio.Reader) error {
 	}()
 
 	m.GenericHeader = header
-	m.ID = binary.LittleEndian.Uint32(data[16:20])
-	m.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(data[20:24])), 0)
+	m.ID = binary.LittleEndian.Uint32(data[0:4])
+	m.Timestamp = time.Unix(int64(binary.LittleEndian.Uint32(data[4:8])), 0)
 
 	return nil
 }
@@ -199,5 +201,5 @@ func (m *KeepaliveMessage) MarshalJSON() ([]byte, error) {
 
 // String prints the Segment header and Keepalive Message.
 func (m *KeepaliveMessage) String() string {
-	return fmt.Sprintf(m.GenericHeader.String()+"Message - ID: %d, timestamp: %v\n", m.ID, m.Timestamp.Unix())
+	return m.GenericHeader.String() + fmt.Sprintf("Message - ID: %d, timestamp: %v\n", m.ID, m.Timestamp.Unix())
 }
