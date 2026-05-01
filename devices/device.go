@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 	"strconv"
+	"strings"
 
 	"github.com/gopacket/gopacket/pcap"
 )
@@ -19,10 +20,11 @@ func ListDeviceNames(printDescription, printIP bool) ([]string, error) {
 		return nil, err
 	}
 
-	list := []string{}
+	list := make([]string, 0, len(devices))
 
 	for _, dev := range devices {
-		d := dev.Name
+		var b strings.Builder
+		b.WriteString(dev.Name)
 
 		if printDescription {
 			desc := "No description available"
@@ -30,33 +32,39 @@ func ListDeviceNames(printDescription, printIP bool) ([]string, error) {
 				desc = dev.Description
 			}
 
-			d += fmt.Sprintf(": %s", desc)
+			b.WriteString(": ")
+			b.WriteString(desc)
 		}
 
 		if printIP && len(dev.Addresses) > 0 {
-			addresses := ""
+			var addresses strings.Builder
 			for i, address := range []pcap.InterfaceAddress(dev.Addresses) {
 				if i > 0 {
-					addresses += " "
+					addresses.WriteByte(' ')
 				}
 
-				addresses += address.IP.String()
+				addresses.WriteString(address.IP.String())
 			}
 
-			if addresses == "" {
-				addresses = "No assigned IP address"
+			if addresses.Len() == 0 {
+				b.WriteString(" [No assigned IP address]")
+			} else {
+				b.WriteString(" [")
+				b.WriteString(addresses.String())
+				b.WriteString("]")
 			}
-
-			d += fmt.Sprintf(" [%s]", addresses)
 		}
 
-		list = append(list, d)
+		list = append(list, b.String())
 	}
 
 	return list, nil
 }
 
 // FindDeviceByName returns the device with the provided name.
+// If name is empty, returns "any" on Linux or an error otherwise.
+// If name is a numeric index, returns the device at that index.
+// Otherwise, returns the name as-is.
 func FindDeviceByName(name string) (string, error) {
 	if name == "" {
 		if deviceAnySupported {
@@ -65,8 +73,6 @@ func FindDeviceByName(name string) (string, error) {
 
 		return "", errors.New("no device name given")
 	}
-
-	device := ""
 
 	if index, err := strconv.Atoi(name); err == nil {
 		devices, err := ListDeviceNames(false, false)
@@ -78,8 +84,8 @@ func FindDeviceByName(name string) (string, error) {
 			return "", fmt.Errorf("device index %d/%d out of bounds for device list", index, len(devices))
 		}
 
-		device = devices[index]
+		return devices[index], nil
 	}
 
-	return device, nil
+	return name, nil
 }

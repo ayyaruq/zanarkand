@@ -51,7 +51,7 @@ func (h *AFPacketHandle) SetBPFFilter(filter string, frameSize int) (_ error) {
 		return err
 	}
 
-	instructions := []bpf.RawInstruction{}
+	instructions := make([]bpf.RawInstruction, 0, len(pcapBPF))
 	for _, ins := range pcapBPF {
 		rawins := bpf.RawInstruction{
 			Op: ins.Code,
