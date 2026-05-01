@@ -26,14 +26,16 @@ func newAFPacketHandle(device string, frameSize int, blockSize int, blockCount i
 			afpacket.OptFrameSize(frameSize),
 			afpacket.OptBlockSize(blockSize),
 			afpacket.OptNumBlocks(blockCount),
-			afpacket.OptPollTimeout(timeout))
+			afpacket.OptPollTimeout(timeout),
+			afpacket.OptPromisc)
 	} else {
 		h.TPacket, err = afpacket.NewTPacket(
 			afpacket.OptInterface(device),
 			afpacket.OptFrameSize(frameSize),
 			afpacket.OptBlockSize(blockSize),
 			afpacket.OptNumBlocks(blockCount),
-			afpacket.OptPollTimeout(timeout))
+			afpacket.OptPollTimeout(timeout),
+			afpacket.OptPromisc)
 	}
 
 	return h, err

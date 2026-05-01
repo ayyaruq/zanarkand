@@ -51,14 +51,14 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 	}
 
 	switch mode {
-	case "afpacket":
-		handle, err = devices.OpenAFPacket(src, filter, 25, pcap.BlockForever)
-
 	case "file":
 		handle, err = devices.OpenFile(src, filter)
 
 	case "pcap":
 		handle, err = devices.OpenPcap(src, filter, pcap.BlockForever)
+
+	case "afpacket":
+		handle, err = devices.OpenAFPacket(src, filter, 25, pcap.BlockForever)
 
 	default:
 		err = ErrUnknownInput{Err: fmt.Errorf("unknown input type: %s", mode)}
