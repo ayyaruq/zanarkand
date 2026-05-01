@@ -75,7 +75,7 @@ To add to your project, simple `go mod init` if you don't already have a `go.mod
 
 Once you have a Go environment setup, install dependencies with `make deps`.
 
-Zanarkand follows the normal `go fmt` for style. All methods and types should be at least somewhat documented,
+Zanarkand follows the normal `gofmt` for style. All methods and types should be at least somewhat documented,
 beyond that develop as you will as there's no specific expectations. Changes are best submited as pull-requests in GitHub.
 
 Regarding versioning, at this point it's probably overkill, as opcodes and types are externalised and so there's no

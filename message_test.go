@@ -77,8 +77,8 @@ func TestHeaderDecode(t *testing.T) {
 		t.Errorf("%s", err.Error())
 	}
 
-	if err.Error() != "Not enough data: Expected 16 bytes but received 12: EOF" {
-		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'Not enough data: Expected 16 bytes but received 12: EOF', got %s",
+	if err.Error() != "not enough data: expected 16 bytes but received 12: EOF" {
+		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'not enough data: expected 16 bytes but received 12: EOF', got %s",
 			err.Error())
 	}
 
@@ -149,8 +149,8 @@ func TestGameEventDecode(t *testing.T) {
 		t.Errorf("%s", err.Error())
 	}
 
-	if err.Error() != "Not enough data: Expected 48 bytes but received 16: EOF" {
-		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'Not enough data: Expected 48 bytes but received 16: EOF', got %s",
+	if err.Error() != "not enough data: expected 48 bytes but received 16: EOF" {
+		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'not enough data: expected 48 bytes but received 16: EOF', got %s",
 			err.Error())
 	}
 
@@ -245,8 +245,8 @@ func TestKeepaliveDecode(t *testing.T) {
 		t.Errorf("%s", err.Error())
 	}
 
-	if err.Error() != "Not enough data: Expected 16 bytes but received 12: EOF" {
-		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'Not enough data: Expected 16 bytes but received 12: EOF', got %s",
+	if err.Error() != "not enough data: expected 16 bytes but received 12: EOF" {
+		t.Errorf("Unexpected ErrNotEnoughData string! Expected 'not enough data: expected 16 bytes but received 12: EOF', got %s",
 			err.Error())
 	}
 

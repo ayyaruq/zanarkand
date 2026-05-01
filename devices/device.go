@@ -63,7 +63,7 @@ func FindDeviceByName(name string) (string, error) {
 			return "any", nil
 		}
 
-		return "", errors.New("No device name given")
+		return "", errors.New("no device name given")
 	}
 
 	device := ""
@@ -71,11 +71,11 @@ func FindDeviceByName(name string) (string, error) {
 	if index, err := strconv.Atoi(name); err == nil {
 		devices, err := ListDeviceNames(false, false)
 		if err != nil {
-			return "", fmt.Errorf("Error building device list: %w", err)
+			return "", fmt.Errorf("error building device list: %w", err)
 		}
 
 		if index >= len(devices) {
-			return "", fmt.Errorf("Device index %d/%d out of bounds for device list", index, len(devices))
+			return "", fmt.Errorf("device index %d/%d out of bounds for device list", index, len(devices))
 		}
 
 		device = devices[index]

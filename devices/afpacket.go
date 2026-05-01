@@ -17,7 +17,7 @@ func afpacketCalculateBuffers(targetSize, snaplen, pageSize int) (frameSize, blo
 	blockCount = (targetSize * 1024 * 1024) / blockSize
 
 	if blockCount == 0 {
-		return 0, 0, 0, errors.New("Buffer size too small")
+		return 0, 0, 0, errors.New("buffer size too small")
 	}
 
 	return frameSize, blockSize, blockCount, nil

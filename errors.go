@@ -12,7 +12,7 @@ type ErrNotEnoughData struct {
 }
 
 func (e ErrNotEnoughData) Error() string {
-	return fmt.Sprintf("Not enough data: Expected %d bytes but received %d: %v", e.Expected, e.Received, e.Err)
+	return fmt.Sprintf("not enough data: expected %d bytes but received %d: %v", e.Expected, e.Received, e.Err)
 }
 
 func (e *ErrNotEnoughData) Unwrap() error { return e.Err }
@@ -23,7 +23,7 @@ type ErrDecodingFailure struct {
 }
 
 func (e ErrDecodingFailure) Error() string {
-	return fmt.Sprintf("Unable to decode message: %v", e.Err)
+	return fmt.Sprintf("unable to decode message: %v", e.Err)
 }
 
 func (e *ErrDecodingFailure) Unwrap() error { return e.Err }
@@ -31,6 +31,10 @@ func (e *ErrDecodingFailure) Unwrap() error { return e.Err }
 // ErrUnknownInput indicates the provided mode for a sniffer is not a known type.
 type ErrUnknownInput struct {
 	Err error
+}
+
+func (e ErrUnknownInput) Error() string {
+	return fmt.Sprintf("unknown input type: %v", e.Err)
 }
 
 func (e *ErrUnknownInput) Unwrap() error { return e.Err }

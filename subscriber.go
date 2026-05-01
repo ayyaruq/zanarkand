@@ -158,7 +158,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 	for {
 		frame, err := s.NextFrame()
 		if err != nil {
-			return fmt.Errorf("error retrieving next frame: %s", err)
+			return fmt.Errorf("error retrieving next frame: %w", err)
 		}
 
 		// Setup our Message reader
