@@ -15,6 +15,20 @@ import (
 const frameHeaderLength = 40
 const frameMagicLE uint64 = 0xE2465DFF41A05252
 
+var (
+	privateBlock10  = mustParseCIDR("10.0.0.0/8")
+	privateBlock172 = mustParseCIDR("172.16.0.0/12")
+	privateBlock192 = mustParseCIDR("192.168.0.0/16")
+)
+
+func mustParseCIDR(s string) *net.IPNet {
+	_, ipnet, err := net.ParseCIDR(s)
+	if err != nil {
+		panic(err)
+	}
+	return ipnet
+}
+
 const (
 	FrameCompressionNone  = 0
 	FrameCompressionZlib  = 1
@@ -158,13 +172,7 @@ func isPrivate(ip net.IP) bool {
 		return true
 	}
 
-	_, private24BitBlock, _ := net.ParseCIDR("10.0.0.0/8")
-	_, private20BitBlock, _ := net.ParseCIDR("172.16.0.0/12")
-	_, private16BitBlock, _ := net.ParseCIDR("192.168.0.0/16")
-
-	private := private24BitBlock.Contains(ip) || private20BitBlock.Contains(ip) || private16BitBlock.Contains(ip)
-
-	return private
+	return privateBlock10.Contains(ip) || privateBlock172.Contains(ip) || privateBlock192.Contains(ip)
 }
 
 func validateMagic(header []byte) bool {
