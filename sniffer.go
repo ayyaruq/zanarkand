@@ -57,6 +57,9 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 	case "pcap":
 		handle, err = devices.OpenPcap(src, filter, pcap.BlockForever)
 
+	case "pfring":
+		handle, err = devices.OpenPFRing(src, filter, 1600, pcap.BlockForever)
+
 	case "afpacket":
 		handle, err = devices.OpenAFPacket(src, filter, 25, pcap.BlockForever)
 

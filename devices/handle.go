@@ -76,3 +76,22 @@ func OpenAFPacket(device, filter string, bufferSize int, timeout time.Duration) 
 
 	return h, nil
 }
+
+// OpenPFRing opens a DeviceHandle for live capture via PF_RING on a given interface.
+// PF_RING is a high-performance packet capture library from ntop.org. The snaplen
+// controls the maximum packet size captured, and promiscuous mode is enabled by
+// default. PF_RING is only available on Linux systems.
+func OpenPFRing(device, filter string, snaplen uint32, timeout time.Duration) (*PFRingHandle, error) {
+	h, err := newPFRingHandle(device, snaplen, timeout)
+	if err != nil {
+		return nil, err
+	}
+
+	err = h.SetBPFFilter(filter)
+	if err != nil {
+		h.Close()
+		return nil, err
+	}
+
+	return h, nil
+}
