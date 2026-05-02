@@ -18,14 +18,16 @@ type reassembledPacket struct {
 
 // frameStreamFactory implements tcpassembly.StreamFactory
 type frameStreamFactory struct {
-	ch chan<- reassembledPacket
+	dataCh chan<- reassembledPacket
+	errCh  chan<- error
 }
 
 // frameStream handles decoding TCP packets
 type frameStream struct {
 	net, transport gopacket.Flow
 	r              tcpreader.ReaderStream
-	ch             chan<- reassembledPacket
+	dataCh         chan<- reassembledPacket
+	errCh          chan<- error
 }
 
 // New implements StreamFactory.New(), acting as a Factory for each new Flow.
@@ -34,7 +36,8 @@ func (f *frameStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Strea
 		net:       net,
 		transport: transport,
 		r:         tcpreader.NewReaderStream(),
-		ch:        f.ch,
+		dataCh:    f.dataCh,
+		errCh:     f.errCh,
 	}
 
 	// Start the Stream or prepare to clench

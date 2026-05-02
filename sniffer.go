@@ -45,7 +45,8 @@ type Sniffer struct {
 	mu    sync.RWMutex
 	state SnifferState
 
-	ch     chan reassembledPacket
+	dataCh chan reassembledPacket
+	errCh  chan error
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -58,8 +59,9 @@ type Sniffer struct {
 
 // NewSniffer creates a Sniffer instance.
 func NewSniffer(mode, src string) (*Sniffer, error) {
-	ch := make(chan reassembledPacket, 200)
-	streamFactory := &frameStreamFactory{ch: ch}
+	dataCh := make(chan reassembledPacket, 200)
+	errCh := make(chan error, 1)
+	streamFactory := &frameStreamFactory{dataCh: dataCh, errCh: errCh}
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
 	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 32
@@ -100,7 +102,8 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 		pool:      streamPool,
 		assembler: assembler,
 		state:     SnifferStopped,
-		ch:        ch,
+		dataCh:    dataCh,
+		errCh:     errCh,
 		Source:    gopacket.NewPacketSource(handle, handle.LinkType()),
 	}, nil
 }
@@ -117,6 +120,14 @@ func (s *Sniffer) Status() SnifferState {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.state
+}
+
+// Errors returns a channel that receives reassembler errors.
+// These errors indicate problems during TCP stream reassembly,
+// such as lost frames or malformed data. The channel is buffered
+// and will drop errors if not consumed.
+func (s *Sniffer) Errors() <-chan error {
+	return s.errCh
 }
 
 // Start an initialised Sniffer. It blocks until Stop is called or the context is cancelled.
@@ -172,10 +183,22 @@ func (s *Sniffer) Stop() {
 	}
 }
 
+// StartTrace begins runtime/trace profiling, writing to w.
+// Call StopTrace to finish. Useful for diagnosing performance issues
+// such as channel buffer exhaustion or slow frame decoding.
+func StartTrace(w io.Writer) error {
+	return trace.Start(w)
+}
+
+// StopTrace stops runtime/trace profiling.
+func StopTrace() {
+	trace.Stop()
+}
+
 // NextFrame returns the next decoded Frame read by the Sniffer.
 func (s *Sniffer) NextFrame() (*Frame, error) {
 	select {
-	case data := <-s.ch:
+	case data := <-s.dataCh:
 		// Setup our Frame
 		frame := new(Frame)
 
