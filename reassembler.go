@@ -55,16 +55,14 @@ func (f *frameStream) run() {
 		// Skip to start of a frame
 		err := discardUntilValid(reader)
 		if err != nil {
-			// #nosec G104
-			fmt.Errorf("error syncing Frame start position: %w", err)
+			f.reportError(fmt.Errorf("error syncing Frame start position: %w", err))
 			return
 		}
 
 		// Grab the synced header bytes so we can make sure we have enough data
 		header, err := reader.Peek(frameHeaderLength)
 		if err != nil {
-			// #nosec G104
-			fmt.Errorf("can't peek into header bytes from buffer: %w", err)
+			f.reportError(fmt.Errorf("can't peek into header bytes from buffer: %w", err))
 			return
 		}
 
@@ -74,17 +72,24 @@ func (f *frameStream) run() {
 
 		count, err := reader.Read(data)
 		if err != nil {
-			// #nosec G104
-			fmt.Errorf("can't read %d bytes from buffer: %w", length, err)
+			f.reportError(fmt.Errorf("can't read %d bytes from buffer: %w", length, err))
 			return
 		}
 
 		if count != int(length) {
-			// #nosec G104
-			fmt.Errorf("read less data than expected: %d < %d", count, length)
+			f.reportError(fmt.Errorf("read less data than expected: %d < %d", count, length))
 			return
 		}
 
-		f.ch <- reassembledPacket{Body: data, Flow: f.net}
+		f.dataCh <- reassembledPacket{Body: data, Flow: f.net}
+	}
+}
+
+func (f *frameStream) reportError(err error) {
+	if f.errCh != nil {
+		select {
+		case f.errCh <- ErrReassemblyError{Err: err}:
+		default:
+		}
 	}
 }

@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"runtime/trace"
 	"sync"
 	"time"
 

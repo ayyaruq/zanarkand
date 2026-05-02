@@ -64,6 +64,53 @@ func main() {
 ```
 
 
+## Debugging
+
+### Verbose TCP assembly logging
+
+gopacket's tcpassembly package has a hidden flag `-assembly_debug_log` that logs at least one line per packet. Pass it to your binary:
+
+```bash
+./myparser -assembly_debug_log -i en0
+```
+
+**Important:** If your tool calls `flag.Parse()`, this flag will be recognized automatically. If you set flags programmatically (e.g. `flag.Set`), call `flag.Parse()` before starting the sniffer, or set the flag after parsing.
+
+### Profiling with runtime/trace
+
+If you experience performance issues (e.g., channel buffer exhaustion under high packet volume),
+use `runtime/trace` to profile:
+
+```go
+f, err := os.Create("trace.out")
+if err != nil {
+	log.Fatal(err)
+}
+defer f.Close()
+
+if err := zanarkand.StartTrace(f); err != nil {
+	log.Fatal(err)
+}
+defer zanarkand.StopTrace()
+
+// ... run your capture ...
+```
+
+View the trace with: `go tool trace trace.out`
+
+### Reassembler errors
+
+The Sniffer exposes an error channel for TCP reassembly failures:
+
+```go
+go func() {
+	for err := range sniffer.Errors() {
+		log.Printf("reassembler error: %v", err)
+	}
+}()
+```
+
+
 ## Developing
 
 To start, install Go 1.24 or later. Error types implement `Unwrap()` for Go 1.13+ error wrapping.
