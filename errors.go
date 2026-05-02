@@ -38,3 +38,14 @@ func (e ErrUnknownInput) Error() string {
 }
 
 func (e *ErrUnknownInput) Unwrap() error { return e.Err }
+
+// ErrReassemblyError indicates an error during TCP stream reassembly.
+type ErrReassemblyError struct {
+	Err error
+}
+
+func (e ErrReassemblyError) Error() string {
+	return fmt.Sprintf("reassembly error: %v", e.Err)
+}
+
+func (e *ErrReassemblyError) Unwrap() error { return e.Err }
