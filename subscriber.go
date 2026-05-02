@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"compress/zlib"
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -11,8 +12,8 @@ import (
 
 // Subscriber describes the interface for individual Frame segment subscribers.
 type Subscriber interface {
-	Subscribe(*Sniffer)
-	Close()
+	Subscribe(ctx context.Context, s *Sniffer) error
+	Close(s *Sniffer)
 }
 
 type readerPool struct {
@@ -43,10 +44,12 @@ func NewGameEventSubscriber() *GameEventSubscriber {
 	}
 }
 
-// Subscribe starts the GameEventSubscriber.
-func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
-	if !s.Active {
-		go s.Start()
+// Subscribe starts the GameEventSubscriber. It blocks until the context is cancelled,
+// the Sniffer is stopped, or an error occurs. If the Sniffer is not already running,
+// it will be started in a goroutine.
+func (g *GameEventSubscriber) Subscribe(ctx context.Context, s *Sniffer) error {
+	if !s.IsActive() {
+		go s.Start(ctx)
 	}
 
 	pool := newReaderPool()
@@ -122,7 +125,7 @@ func (g *GameEventSubscriber) Subscribe(s *Sniffer) error {
 
 		// We're done with the current frame, if Sniffer is stopped then exit,
 		// allowing user to start a new subscriber routine.
-		if !s.Active {
+		if !s.IsActive() {
 			return nil
 		}
 	}
@@ -147,10 +150,12 @@ func NewKeepaliveSubscriber() *KeepaliveSubscriber {
 	}
 }
 
-// Subscribe starts the KeepaliveSubscriber.
-func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
-	if !s.Active {
-		go s.Start()
+// Subscribe starts the KeepaliveSubscriber. It blocks until the context is cancelled,
+// the Sniffer is stopped, or an error occurs. If the Sniffer is not already running,
+// it will be started in a goroutine.
+func (k *KeepaliveSubscriber) Subscribe(ctx context.Context, s *Sniffer) error {
+	if !s.IsActive() {
+		go s.Start(ctx)
 	}
 
 	pool := newReaderPool()
@@ -215,7 +220,7 @@ func (k *KeepaliveSubscriber) Subscribe(s *Sniffer) error {
 		pool.bare.Put(r)
 		pool.body.Put(b)
 
-		if !s.Active {
+		if !s.IsActive() {
 			return nil
 		}
 	}

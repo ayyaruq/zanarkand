@@ -1,8 +1,10 @@
 package zanarkand
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/gopacket/gopacket"
@@ -13,14 +15,36 @@ import (
 	"github.com/ayyaruq/zanarkand/devices"
 )
 
+// SnifferState represents the current state of a Sniffer.
+type SnifferState int
+
+const (
+	SnifferStopped SnifferState = iota
+	SnifferRunning
+	SnifferFinished
+)
+
+func (s SnifferState) String() string {
+	switch s {
+	case SnifferStopped:
+		return "stopped"
+	case SnifferRunning:
+		return "running"
+	case SnifferFinished:
+		return "finished"
+	default:
+		return "unknown"
+	}
+}
+
 // Sniffer is a representation of a packet source, filter, and destination.
 type Sniffer struct {
-	// Sniffer State
-	Active   bool
-	Status   string
-	notifier chan bool
+	mu    sync.RWMutex
+	state SnifferState
 
-	// Packet Assembler
+	ctx    context.Context
+	cancel context.CancelFunc
+
 	factory   tcpassembly.StreamFactory
 	pool      *tcpassembly.StreamPool
 	assembler *tcpassembly.Assembler
@@ -37,14 +61,10 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 32
 	assembler.AssemblerOptions.MaxBufferedPagesTotal = 192 // 32 for each of the Client/Server pairs for Lobby, Chat, and Zone
 
-	// Setup state tracker
-	stateNotifier := make(chan bool, 1)
-
-	// Setup handle and filter
 	var err error
 	var handle devices.DeviceHandle
 
-	var filter = "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551"
+	filter := "tcp portrange 54992-54994 or tcp portrange 55006-55007 or tcp portrange 55021-55040 or tcp portrange 55296-55551"
 
 	if src == "" {
 		return nil, fmt.Errorf("capture handle: no source provided")
@@ -71,50 +91,58 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 		return nil, fmt.Errorf("capture handle: %w", err)
 	}
 
-	s := &Sniffer{
+	return &Sniffer{
 		factory:   streamFactory,
 		pool:      streamPool,
 		assembler: assembler,
-
-		Active:   false,
-		Status:   "stopped",
-		notifier: stateNotifier,
-
-		Source: gopacket.NewPacketSource(handle, handle.LinkType()),
-	}
-
-	return s, nil
+		state:     SnifferStopped,
+		Source:    gopacket.NewPacketSource(handle, handle.LinkType()),
+	}, nil
 }
 
-// Start an initialised Sniffer.
-func (s *Sniffer) Start() error {
-	s.notifier <- true
-	s.Active = <-s.notifier
-	s.Status = "started"
+// IsActive reports whether the Sniffer is currently capturing.
+func (s *Sniffer) IsActive() bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.state == SnifferRunning
+}
+
+// Status returns the current Sniffer state.
+func (s *Sniffer) Status() SnifferState {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.state
+}
+
+// Start an initialised Sniffer. It blocks until Stop is called or the context is cancelled.
+// For file mode, it returns io.EOF when the file is exhausted.
+func (s *Sniffer) Start(ctx context.Context) error {
+	s.ctx, s.cancel = context.WithCancel(ctx)
+	defer s.cancel()
+
+	s.mu.Lock()
+	s.state = SnifferRunning
+	s.mu.Unlock()
 
 	packets := s.Source.Packets()
 	ticker := time.NewTicker(3 * time.Second)
-
 	defer ticker.Stop()
 
-	for s.Active {
+	for {
 		select {
-		case state := <-s.notifier:
-			// Set state condition and loop control, if state is false, we're stopped
-			s.Active = state
-			if !state {
-				s.Status = "stopped"
-				s.assembler.FlushAll()
-
-				return nil
-			}
-
-			s.Status = "running"
+		case <-s.ctx.Done():
+			s.mu.Lock()
+			s.state = SnifferStopped
+			s.mu.Unlock()
+			s.assembler.FlushAll()
+			return nil
 
 		case packet := <-packets:
 			// Nil Packet means end of a PCAP file
 			if packet == nil {
-				s.Status = "finished"
+				s.mu.Lock()
+				s.state = SnifferFinished
+				s.mu.Unlock()
 				return io.EOF
 			}
 
@@ -130,13 +158,13 @@ func (s *Sniffer) Start() error {
 			s.assembler.FlushWithOptions(tcpassembly.FlushOptions{CloseAll: false, T: t.Add(-3 * time.Second)})
 		}
 	}
-
-	return nil
 }
 
 // Stop a running Sniffer.
 func (s *Sniffer) Stop() {
-	s.notifier <- false
+	if s.cancel != nil {
+		s.cancel()
+	}
 }
 
 // NextFrame returns the next decoded Frame read by the Sniffer.
@@ -157,5 +185,7 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 	// Add our flow data
 	frame.meta.Flow = data.Flow
 
-	return frame, nil
+	case <-s.ctx.Done():
+		return nil, s.ctx.Err()
+	}
 }
