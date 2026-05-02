@@ -70,3 +70,65 @@ func (g *GameEventSubscriber) Close(s *Sniffer) {
 	close(g.EgressEvents)
 }
 
+// GameEventCallback is a function called for each decoded GameEventMessage.
+type GameEventCallback func(msg *GameEventMessage, direction FlowDirection)
+
+// GameEventHandler delivers GameEventMessages via a callback function
+// instead of channels, avoiding channel overhead and goroutine coordination.
+type GameEventHandler struct {
+	callback GameEventCallback
+	opcodes  map[uint16]struct{}
+}
+
+// NewGameEventHandler returns a subscriber that calls fn for each
+// decoded GameEventMessage. Use WithOpcodes to filter by opcode.
+func NewGameEventHandler(fn GameEventCallback, opts ...GameEventOption) *GameEventHandler {
+	cfg := gameEventConfig{}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	return &GameEventHandler{
+		callback: fn,
+		opcodes:  cfg.opcodes,
+	}
+}
+
+// Subscribe starts the GameEventHandler. It blocks until the context is cancelled,
+// the Sniffer is stopped, or an error occurs. If the Sniffer is not already running,
+// it will be started in a goroutine.
+func (g *GameEventHandler) Subscribe(ctx context.Context, s *Sniffer) error {
+	if !s.IsActive() {
+		go s.Start(ctx)
+	}
+
+	return s.ProcessFrames(func(frame *Frame, header *GenericHeader, r *bufio.Reader) error {
+		if header.Segment != GameEvent {
+			return nil
+		}
+
+		msg := new(GameEventMessage)
+		if err := msg.Decode(r); err != nil {
+			return ErrDecodingFailure{Err: err}
+		}
+
+		if len(g.opcodes) > 0 {
+			if _, ok := g.opcodes[msg.Opcode]; !ok {
+				return nil
+			}
+		}
+
+		direction := frame.Direction()
+		if direction == 0 {
+			return ErrDecodingFailure{Err: fmt.Errorf("unexpected frame direction")}
+		}
+
+		g.callback(msg, direction)
+		return nil
+	})
+}
+
+// Close stops the sniffer.
+func (g *GameEventHandler) Close(s *Sniffer) {
+	s.Stop()
+}
