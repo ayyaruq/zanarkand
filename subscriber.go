@@ -12,6 +12,24 @@ type Subscriber interface {
 	Close(s *Sniffer)
 }
 
+// GameEventOption configures a GameEventSubscriber.
+type GameEventOption func(*gameEventConfig)
+
+type gameEventConfig struct {
+	opcodes map[uint16]struct{}
+}
+
+// WithOpcodes filters GameEventMessages to only those matching the given opcodes.
+// If no opcodes are specified, all GameEvent messages are delivered.
+func WithOpcodes(opcodes ...uint16) GameEventOption {
+	return func(c *gameEventConfig) {
+		c.opcodes = make(map[uint16]struct{}, len(opcodes))
+		for _, op := range opcodes {
+			c.opcodes[op] = struct{}{}
+		}
+	}
+}
+
 // GameEventSubscriber is a Subscriber for GameEvent segments.
 type GameEventSubscriber struct {
 	IngressEvents chan *GameEventMessage
