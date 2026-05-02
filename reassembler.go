@@ -16,16 +16,16 @@ type reassembledPacket struct {
 	Flow gopacket.Flow
 }
 
-// reassembledChan is a byte channel to receive the length of a full frame
-var reassembledChan = make(chan reassembledPacket, 200)
-
 // frameStreamFactory implements tcpassembly.StreamFactory
-type frameStreamFactory struct{}
+type frameStreamFactory struct {
+	ch chan<- reassembledPacket
+}
 
 // frameStream handles decoding TCP packets
 type frameStream struct {
 	net, transport gopacket.Flow
 	r              tcpreader.ReaderStream
+	ch             chan<- reassembledPacket
 }
 
 // New implements StreamFactory.New(), acting as a Factory for each new Flow.
@@ -34,6 +34,7 @@ func (f *frameStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Strea
 		net:       net,
 		transport: transport,
 		r:         tcpreader.NewReaderStream(),
+		ch:        f.ch,
 	}
 
 	// Start the Stream or prepare to clench
@@ -81,6 +82,6 @@ func (f *frameStream) run() {
 			return
 		}
 
-		reassembledChan <- reassembledPacket{Body: data, Flow: f.net}
+		f.ch <- reassembledPacket{Body: data, Flow: f.net}
 	}
 }

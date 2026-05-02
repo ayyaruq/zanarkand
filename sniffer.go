@@ -42,6 +42,7 @@ type Sniffer struct {
 	mu    sync.RWMutex
 	state SnifferState
 
+	ch     chan reassembledPacket
 	ctx    context.Context
 	cancel context.CancelFunc
 
@@ -54,8 +55,8 @@ type Sniffer struct {
 
 // NewSniffer creates a Sniffer instance.
 func NewSniffer(mode, src string) (*Sniffer, error) {
-	// Setup Packet Assembler
-	streamFactory := new(frameStreamFactory)
+	ch := make(chan reassembledPacket, 200)
+	streamFactory := &frameStreamFactory{ch: ch}
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)
 	assembler.AssemblerOptions.MaxBufferedPagesPerConnection = 32
@@ -96,6 +97,7 @@ func NewSniffer(mode, src string) (*Sniffer, error) {
 		pool:      streamPool,
 		assembler: assembler,
 		state:     SnifferStopped,
+		ch:        ch,
 		Source:    gopacket.NewPacketSource(handle, handle.LinkType()),
 	}, nil
 }
@@ -169,21 +171,23 @@ func (s *Sniffer) Stop() {
 
 // NextFrame returns the next decoded Frame read by the Sniffer.
 func (s *Sniffer) NextFrame() (*Frame, error) {
-	data := <-reassembledChan
+	select {
+	case data := <-s.ch:
+		// Setup our Frame
+		frame := new(Frame)
 
-	// Setup our Frame
-	frame := new(Frame)
+		if err := frame.Decode(data.Body); err != nil {
+			return nil, err
+		}
 
-	if err := frame.Decode(data.Body); err != nil {
-		return nil, err
-	}
+		if int(frame.Length) != len(data.Body) {
+			return nil, ErrNotEnoughData{Expected: len(data.Body), Received: int(frame.Length)}
+		}
 
-	if int(frame.Length) != len(data.Body) {
-		return nil, ErrNotEnoughData{Expected: len(data.Body), Received: int(frame.Length)}
-	}
+		// Add our flow data
+		frame.meta.Flow = data.Flow
 
-	// Add our flow data
-	frame.meta.Flow = data.Flow
+		return frame, nil
 
 	case <-s.ctx.Done():
 		return nil, s.ctx.Err()
