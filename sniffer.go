@@ -86,9 +86,17 @@ func WithErrorBufferSize(n int) Option {
 }
 
 // NewSniffer creates a Sniffer instance.
-func NewSniffer(mode, src string) (*Sniffer, error) {
-	dataCh := make(chan reassembledPacket, 200)
-	errCh := make(chan error, 1)
+func NewSniffer(mode, src string, opts ...Option) (*Sniffer, error) {
+	cfg := snifferConfig{
+		dataBufSize: defaultDataBufSize,
+		errBufSize:  defaultErrBufSize,
+	}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
+	dataCh := make(chan reassembledPacket, cfg.dataBufSize)
+	errCh := make(chan error, cfg.errBufSize)
 	streamFactory := &frameStreamFactory{dataCh: dataCh, errCh: errCh}
 	streamPool := tcpassembly.NewStreamPool(streamFactory)
 	assembler := tcpassembly.NewAssembler(streamPool)

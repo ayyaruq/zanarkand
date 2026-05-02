@@ -76,6 +76,18 @@ gopacket's tcpassembly package has a hidden flag `-assembly_debug_log` that logs
 
 **Important:** If your tool calls `flag.Parse()`, this flag will be recognized automatically. If you set flags programmatically (e.g. `flag.Set`), call `flag.Parse()` before starting the sniffer, or set the flag after parsing.
 
+### Configuring buffer sizes
+
+If you experience channel buffer exhaustion under high packet volume, increase the frame data buffer:
+
+```go
+sniffer, err := zanarkand.NewSniffer("pcap", "en0",
+	zanarkand.WithDataBufferSize(1000),
+)
+```
+
+The default is 200 frames (~400KB). The error channel defaults to 1 and drops errors when full.
+
 ### Profiling with runtime/trace
 
 If you experience performance issues (e.g., channel buffer exhaustion under high packet volume),
