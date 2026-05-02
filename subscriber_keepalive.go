@@ -47,12 +47,24 @@ func (k *KeepaliveSubscriber) Close(s *Sniffer) {
 }
 
 // KeepaliveCallback is a function called for each decoded KeepaliveMessage.
+// The message pointer is only valid for the duration of the call; copy any
+// data that must outlive the callback.
+//
+//	// Copy fields before spawning work
+//	func(msg *KeepaliveMessage) {
+//	    id := msg.ID
+//	    t := msg.Timestamp
+//	    go func() { fmt.Printf("ping %d at %v\n", id, t) }()
+//	}
 type KeepaliveCallback func(msg *KeepaliveMessage)
 
 // KeepaliveHandler delivers KeepaliveMessages via a callback function
 // instead of channels.
+// The callback receives a pointer to an internal message buffer that is
+// reused across calls; do not retain the pointer after the callback returns.
 type KeepaliveHandler struct {
 	callback KeepaliveCallback
+	msg      KeepaliveMessage
 }
 
 // NewKeepaliveHandler returns a subscriber that calls fn for each
@@ -76,12 +88,12 @@ func (k *KeepaliveHandler) Subscribe(ctx context.Context, s *Sniffer) error {
 			return nil
 		}
 
-		msg := new(KeepaliveMessage)
-		if err := msg.Decode(r); err != nil {
+		k.msg.Reset()
+		if err := k.msg.Decode(r); err != nil {
 			return ErrDecodingFailure{Err: err}
 		}
 
-		k.callback(msg)
+		k.callback(&k.msg)
 		return nil
 	})
 }
