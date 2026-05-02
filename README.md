@@ -12,15 +12,17 @@ additionally handle TCP reassembly and provides an interface for IPC frame decod
 
 For Windows users, elevated security privileges may be required, as well as a local firewall exemption.
 
-To use the library, you need to instantiate a Sniffer and then loop NextFrame in it once it starts.
-For each Frame, you can then iterate Messages in it. Helper methods are available to filter Segment
-and Opcodes from Frames and Messages respectively. The Sniffer can be stopped and restarted at any time.
+To use the library, instantiate a Sniffer and call `Start(ctx)` with a context. The Sniffer blocks until
+`Stop()` is called or the context is cancelled. Frames are consumed via `NextFrame()`, which returns when
+a frame is available or the Sniffer stops. Helper subscribers are available to filter Segment types and
+deliver decoded messages on channels. The Sniffer can be stopped at any time via `Stop()` or context cancellation.
 
 
 ## Example
 
 ```Go
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -43,14 +45,14 @@ func main() {
 
 	// Don't block the Sniffer, but capture errors
 	go func() {
-		err := subscriber.Subscribe(sniffer)
+		err := subscriber.Subscribe(context.Background(), sniffer)
 		if err != nil {
 			log.Fatal(err)
 		}
 	}()
 
-// Capture the first 10 Messages sent from the server
-// This ignores Messages sent by the client to the server
+	// Capture the first 10 Messages sent from the server
+	// This ignores Messages sent by the client to the server
 	for i := 0; i < 10; i++ {
 		message := <-subscriber.IngressEvents
 		fmt.Println(message.String())

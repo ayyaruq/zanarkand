@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"log"
@@ -40,7 +41,7 @@ func fakeMain() int {
 
 	// Close when we're done
 	defer func(sniffer *zanarkand.Sniffer) {
-		if sniffer.Active {
+		if sniffer.IsActive() {
 			subscriber.Close(sniffer)
 			log.Println("Stopped active sniffer")
 		}
@@ -49,7 +50,7 @@ func fakeMain() int {
 	// Don't block the Sniffer
 	log.Println("Starting sniffer on interface", *inet)
 	go func() {
-		err := subscriber.Subscribe(sniffer)
+		err := subscriber.Subscribe(context.Background(), sniffer)
 		if err != nil {
 			log.Fatal(err)
 		}

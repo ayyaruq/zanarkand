@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"os"
@@ -48,7 +49,7 @@ func fakeMain() int {
 
 	// Close when we're done
 	defer func(sniffer *zanarkand.Sniffer) {
-		if sniffer.Active {
+		if sniffer.IsActive() {
 			subscriber.Close(sniffer)
 			log.Println("Stopped active snifer")
 		}
@@ -57,7 +58,7 @@ func fakeMain() int {
 	// Don't block the Sniffer
 	log.Println("Starting sniffer from source", src)
 	go func() {
-		err := subscriber.Subscribe(sniffer)
+		err := subscriber.Subscribe(context.Background(), sniffer)
 		if err != nil {
 			log.Fatal(err)
 		}
