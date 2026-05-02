@@ -2,32 +2,14 @@ package zanarkand
 
 import (
 	"bufio"
-	"bytes"
-	"compress/zlib"
 	"context"
 	"fmt"
-	"io"
-	"sync"
 )
 
 // Subscriber describes the interface for individual Frame segment subscribers.
 type Subscriber interface {
 	Subscribe(ctx context.Context, s *Sniffer) error
 	Close(s *Sniffer)
-}
-
-type readerPool struct {
-	body sync.Pool
-	bare sync.Pool
-	zlib sync.Pool
-}
-
-func newReaderPool() *readerPool {
-	return &readerPool{
-		body: sync.Pool{New: func() any { return bytes.NewReader(nil) }},
-		bare: sync.Pool{New: func() any { return bufio.NewReader(nil) }},
-		zlib: sync.Pool{},
-	}
 }
 
 // GameEventSubscriber is a Subscriber for GameEvent segments.
@@ -52,83 +34,26 @@ func (g *GameEventSubscriber) Subscribe(ctx context.Context, s *Sniffer) error {
 		go s.Start(ctx)
 	}
 
-	pool := newReaderPool()
-
-	for {
-		frame, err := s.NextFrame()
-		if err != nil {
-			return fmt.Errorf("error retrieving next frame: %w", err)
-		}
-
-		// Setup our Message reader
-		b := pool.body.Get().(*bytes.Reader)
-		if b != nil {
-			b.Reset(frame.Body)
-		}
-
-		r := pool.bare.Get().(*bufio.Reader)
-		if r != nil {
-			r.Reset(b)
-		}
-
-		z := pool.zlib.Get().(io.ReadCloser)
-		if z != nil {
-			err = z.(zlib.Resetter).Reset(b, nil)
-			if err != nil {
-				return fmt.Errorf("error resetting ZLIB decoder: %w", err)
-			}
-		} else {
-			z, err = zlib.NewReader(b)
-			if err != nil {
-				return fmt.Errorf("error creating ZLIB decoder: %w", err)
-			}
-		}
-
-		if frame.Compression == FrameCompressionZlib {
-			r.Reset(z.(io.ReadCloser))
-		}
-
-		for i := 0; i < int(frame.Count); i++ {
-			header := new(GenericHeader)
-
-			err := header.Decode(r)
-			if err != nil {
-				return ErrDecodingFailure{Err: err}
-			}
-
-			if header.Segment == GameEvent {
-				msg := new(GameEventMessage)
-
-				err = msg.Decode(r)
-				if err != nil {
-					return ErrDecodingFailure{Err: err}
-				}
-
-				switch frame.Direction() {
-				case FrameIngress:
-					g.IngressEvents <- msg
-
-				case FrameEgress:
-					g.EgressEvents <- msg
-
-				default:
-					return ErrDecodingFailure{Err: fmt.Errorf("unexpected frame direction")}
-				}
-			}
-		}
-
-		// Return our readers to the pool - the pool will get GC'd when the function exits
-		z.Close()
-		pool.zlib.Put(z)
-		pool.bare.Put(r)
-		pool.body.Put(b)
-
-		// We're done with the current frame, if Sniffer is stopped then exit,
-		// allowing user to start a new subscriber routine.
-		if !s.IsActive() {
+	return s.ProcessFrames(func(frame *Frame, header *GenericHeader, r *bufio.Reader) error {
+		if header.Segment != GameEvent {
 			return nil
 		}
-	}
+
+		msg := new(GameEventMessage)
+		if err := msg.Decode(r); err != nil {
+			return ErrDecodingFailure{Err: err}
+		}
+
+		switch frame.Direction() {
+		case FrameIngress:
+			g.IngressEvents <- msg
+		case FrameEgress:
+			g.EgressEvents <- msg
+		default:
+			return ErrDecodingFailure{Err: fmt.Errorf("unexpected frame direction")}
+		}
+		return nil
+	})
 }
 
 // Close will stop a sniffer, drain the channels, then close the channels.
@@ -158,72 +83,19 @@ func (k *KeepaliveSubscriber) Subscribe(ctx context.Context, s *Sniffer) error {
 		go s.Start(ctx)
 	}
 
-	pool := newReaderPool()
-
-	for {
-		frame, err := s.NextFrame()
-		if err != nil {
-			return fmt.Errorf("error retrieving next frame: %w", err)
-		}
-
-		// Setup our Message reader
-		b := pool.body.Get().(*bytes.Reader)
-		if b != nil {
-			b.Reset(frame.Body)
-		}
-
-		r := pool.bare.Get().(*bufio.Reader)
-		if r != nil {
-			r.Reset(b)
-		}
-
-		z := pool.zlib.Get().(io.ReadCloser)
-		if z != nil {
-			err = z.(zlib.Resetter).Reset(b, nil)
-			if err != nil {
-				return fmt.Errorf("error resetting ZLIB decoder: %w", err)
-			}
-		} else {
-			z, err = zlib.NewReader(b)
-			if err != nil {
-				return fmt.Errorf("error creating ZLIB decoder: %w", err)
-			}
-		}
-
-		if frame.Compression == FrameCompressionZlib {
-			r.Reset(z.(io.ReadCloser))
-		}
-
-		for i := 0; i < int(frame.Count); i++ {
-			header := new(GenericHeader)
-
-			err := header.Decode(r)
-			if err != nil {
-				return ErrDecodingFailure{Err: err}
-			}
-
-			if header.Segment == ServerPing || header.Segment == ServerPong {
-				msg := new(KeepaliveMessage)
-
-				err = msg.Decode(r)
-				if err != nil {
-					return ErrDecodingFailure{Err: err}
-				}
-
-				k.Events <- msg
-			}
-		}
-
-		// Return our readers to the pool
-		z.Close()
-		pool.zlib.Put(z)
-		pool.bare.Put(r)
-		pool.body.Put(b)
-
-		if !s.IsActive() {
+	return s.ProcessFrames(func(frame *Frame, header *GenericHeader, r *bufio.Reader) error {
+		if header.Segment != ServerPing && header.Segment != ServerPong {
 			return nil
 		}
-	}
+
+		msg := new(KeepaliveMessage)
+		if err := msg.Decode(r); err != nil {
+			return ErrDecodingFailure{Err: err}
+		}
+
+		k.Events <- msg
+		return nil
+	})
 }
 
 // Close will stop a sniffer, drain the channel, then close the channel.

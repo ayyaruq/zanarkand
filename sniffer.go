@@ -1,6 +1,9 @@
 package zanarkand
 
 import (
+	"bufio"
+	"bytes"
+	"compress/zlib"
 	"context"
 	"fmt"
 	"io"
@@ -191,5 +194,74 @@ func (s *Sniffer) NextFrame() (*Frame, error) {
 
 	case <-s.ctx.Done():
 		return nil, s.ctx.Err()
+	}
+}
+
+// FrameHandler is called by ProcessFrames for each message in a frame.
+type FrameHandler func(frame *Frame, header *GenericHeader, r *bufio.Reader) error
+
+// ProcessFrames iterates over frames and calls fn for each message in each frame.
+// It handles decompression and reader setup. It blocks until the Sniffer is stopped,
+// or an error occurs.
+func (s *Sniffer) ProcessFrames(fn FrameHandler) error {
+	var zpool sync.Pool
+
+	for {
+		frame, err := s.NextFrame()
+		if err != nil {
+			return fmt.Errorf("error retrieving next frame: %w", err)
+		}
+
+		var r *bufio.Reader
+		var z io.ReadCloser
+
+		// Setup our Message reader
+		if frame.Compression == FrameCompressionZlib {
+			z = zpool.Get().(io.ReadCloser)
+			if z != nil {
+				err = z.(zlib.Resetter).Reset(bytes.NewReader(frame.Body), nil)
+				if err != nil {
+					return fmt.Errorf("error resetting ZLIB decoder: %w", err)
+				}
+			} else {
+				z, err = zlib.NewReader(bytes.NewReader(frame.Body))
+				if err != nil {
+					return fmt.Errorf("error creating ZLIB decoder: %w", err)
+				}
+			}
+			r = bufio.NewReader(z)
+		} else {
+			r = bufio.NewReader(bytes.NewReader(frame.Body))
+		}
+
+		for i := 0; i < int(frame.Count); i++ {
+			header := new(GenericHeader)
+
+			err := header.Decode(r)
+			if err != nil {
+				if z != nil {
+					z.Close()
+				}
+				return ErrDecodingFailure{Err: err}
+			}
+
+			if err := fn(frame, header, r); err != nil {
+				if z != nil {
+					z.Close()
+				}
+				return err
+			}
+		}
+
+		// Return the zlib reader to the pool for reuse
+		if z != nil {
+			zpool.Put(z)
+		}
+
+		// We're done with the current frame, if Sniffer is stopped then exit,
+		// allowing user to start a new subscriber routine.
+		if !s.IsActive() {
+			return nil
+		}
 	}
 }
