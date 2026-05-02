@@ -71,13 +71,25 @@ func (g *GameEventSubscriber) Close(s *Sniffer) {
 }
 
 // GameEventCallback is a function called for each decoded GameEventMessage.
+// The message pointer is only valid for the duration of the call; copy any
+// data that must outlive the callback.
+//
+//	// Copy fields before spawning work
+//	func(msg *GameEventMessage, dir FlowDirection) {
+//	    op := msg.Opcode
+//	    src := msg.SourceActor
+//	    go func() { processIpc(op, src) }()
+//	}
 type GameEventCallback func(msg *GameEventMessage, direction FlowDirection)
 
 // GameEventHandler delivers GameEventMessages via a callback function
 // instead of channels, avoiding channel overhead and goroutine coordination.
+// The callback receives a pointer to an internal message buffer that is
+// reused across calls; do not retain the pointer after the callback returns.
 type GameEventHandler struct {
 	callback GameEventCallback
 	opcodes  map[uint16]struct{}
+	msg      GameEventMessage
 }
 
 // NewGameEventHandler returns a subscriber that calls fn for each
@@ -107,13 +119,13 @@ func (g *GameEventHandler) Subscribe(ctx context.Context, s *Sniffer) error {
 			return nil
 		}
 
-		msg := new(GameEventMessage)
-		if err := msg.Decode(r); err != nil {
+		g.msg.Reset()
+		if err := g.msg.Decode(r); err != nil {
 			return ErrDecodingFailure{Err: err}
 		}
 
 		if len(g.opcodes) > 0 {
-			if _, ok := g.opcodes[msg.Opcode]; !ok {
+			if _, ok := g.opcodes[g.msg.Opcode]; !ok {
 				return nil
 			}
 		}
@@ -123,7 +135,7 @@ func (g *GameEventHandler) Subscribe(ctx context.Context, s *Sniffer) error {
 			return ErrDecodingFailure{Err: fmt.Errorf("unexpected frame direction")}
 		}
 
-		g.callback(msg, direction)
+		g.callback(&g.msg, direction)
 		return nil
 	})
 }
