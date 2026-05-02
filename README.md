@@ -1,6 +1,6 @@
 # Zanarkand
 
-[![Build Status](https://img.shields.io/github/actions/status/ayyaruq/zanarkand/test.yml?branch=master)](https://github.com/ayyaruq/zanarkand/actions)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/ayyaruq/zanarkand/test.yml?branch=master)](https://github.com/ayyaruq/zanarkand/actions)
 [![Code Quality](https://goreportcard.com/badge/github.com/ayyaruq/zanarkand)](https://goreportcard.com/report/github.com/ayyaruq/zanarkand)
 [![GitHub Issues](https://img.shields.io/github/issues/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/pulls)
