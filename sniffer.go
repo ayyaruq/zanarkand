@@ -58,6 +58,33 @@ type Sniffer struct {
 	Source *gopacket.PacketSource
 }
 
+// Option configures a Sniffer.
+type Option func(*snifferConfig)
+
+type snifferConfig struct {
+	dataBufSize int
+	errBufSize  int
+}
+
+// Default buffer sizes
+const (
+	defaultDataBufSize = 200
+	defaultErrBufSize  = 1
+)
+
+// WithDataBufferSize sets the buffer size for the frame data channel.
+// This controls how many reassembled frames can be queued before the
+// reassembler goroutines block. The default is 200.
+func WithDataBufferSize(n int) Option {
+	return func(c *snifferConfig) { c.dataBufSize = n }
+}
+
+// WithErrorBufferSize sets the buffer size for the error channel.
+// Errors are dropped if the buffer is full. The default is 1.
+func WithErrorBufferSize(n int) Option {
+	return func(c *snifferConfig) { c.errBufSize = n }
+}
+
 // NewSniffer creates a Sniffer instance.
 func NewSniffer(mode, src string) (*Sniffer, error) {
 	dataCh := make(chan reassembledPacket, 200)
