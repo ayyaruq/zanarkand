@@ -1,13 +1,13 @@
 # Zanarkand
 
-[![Build Status](https://img.shields.io/github/workflow/status/ayyaruq/zanarkand/Go%20Test)](https://github.com/ayyaruq/zanarkand/actions)
+[![Build Status](https://img.shields.io/github/actions/status/ayyaruq/zanarkand/test.yml?branch=master)](https://github.com/ayyaruq/zanarkand/actions)
 [![Code Quality](https://goreportcard.com/badge/github.com/ayyaruq/zanarkand)](https://goreportcard.com/report/github.com/ayyaruq/zanarkand)
 [![GitHub Issues](https://img.shields.io/github/issues/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/issues)
 [![GitHub Pull Requests](https://img.shields.io/github/issues-pr/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/pulls)
 [![GitHub License](https://img.shields.io/github/license/ayyaruq/zanarkand.svg)](https://github.com/ayyaruq/zanarkand/blob/master/LICENSE)
 [![Discord](https://img.shields.io/discord/479945159203880960?color=7289da&label=discord&logo=discordo)](https://discord.gg/fwUwjB5)
 
-Zanarkand is a library to read FFXIV network traffic from PCAP, AF_Packet, or PCAP files. It can
+Zanarkand is a library to read FFXIV network traffic from PCAP, AF_Packet, PF_RING, or PCAP files. It can
 additionally handle TCP reassembly and provides an interface for IPC frame decoding.
 
 For Windows users, elevated security privileges may be required, as well as a local firewall exemption.
@@ -64,8 +64,7 @@ func main() {
 
 ## Developing
 
-To start, install Go 1.24 or later. For ease of error handling, the Go 1.13 error wrapping features are used and so this
-is the minimum supported version.
+To start, install Go 1.24 or later. Error types implement `Unwrap()` for Go 1.13+ error wrapping.
 
 To add to your project, simple `go mod init` if you don't already have a `go.mod` file, and then
 `go get -u github.com/ayyaruq/zanarkand`.
