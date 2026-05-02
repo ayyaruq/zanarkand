@@ -34,13 +34,20 @@ func WithOpcodes(opcodes ...uint16) GameEventOption {
 type GameEventSubscriber struct {
 	IngressEvents chan *GameEventMessage
 	EgressEvents  chan *GameEventMessage
+	opcodes       map[uint16]struct{}
 }
 
 // NewGameEventSubscriber returns a Subscriber handle with channels for inbound and outbound GameEventMessages.
-func NewGameEventSubscriber() *GameEventSubscriber {
+func NewGameEventSubscriber(opts ...GameEventOption) *GameEventSubscriber {
+	cfg := gameEventConfig{}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	return &GameEventSubscriber{
 		IngressEvents: make(chan *GameEventMessage),
 		EgressEvents:  make(chan *GameEventMessage),
+		opcodes:       cfg.opcodes,
 	}
 }
 
@@ -60,6 +67,12 @@ func (g *GameEventSubscriber) Subscribe(ctx context.Context, s *Sniffer) error {
 		msg := new(GameEventMessage)
 		if err := msg.Decode(r); err != nil {
 			return ErrDecodingFailure{Err: err}
+		}
+
+		if len(g.opcodes) > 0 {
+			if _, ok := g.opcodes[msg.Opcode]; !ok {
+				return nil
+			}
 		}
 
 		switch frame.Direction() {

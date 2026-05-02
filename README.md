@@ -88,6 +88,18 @@ sniffer, err := zanarkand.NewSniffer("pcap", "en0",
 
 The default is 200 frames (~400KB). The error channel defaults to 1 and drops errors when full.
 
+### Filtering by opcode
+
+Reduce channel pressure by filtering GameEvent messages to specific opcodes:
+
+```go
+subscriber := zanarkand.NewGameEventSubscriber(
+	zanarkand.WithOpcodes(0x0123, 0x0456),
+)
+```
+
+Only messages matching the specified opcodes will be delivered. Without filters, all GameEvent messages are passed through.
+
 ### Profiling with runtime/trace
 
 If you experience performance issues (e.g., channel buffer exhaustion under high packet volume),
