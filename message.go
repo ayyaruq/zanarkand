@@ -46,6 +46,11 @@ type GenericHeader struct {
 	padding     uint16 // [14:16]
 }
 
+// Reset zeroes the GenericHeader so it can be reused.
+func (m *GenericHeader) Reset() {
+	*m = GenericHeader{}
+}
+
 // Decode a GenericHeader from a byte array.
 func (m *GenericHeader) Decode(r *bufio.Reader) error {
 	data, err := r.Peek(16)
@@ -82,6 +87,11 @@ type GameEventMessage struct {
 	Timestamp time.Time `json:"-"`        // [24:28]
 	padding3  uint32    // [28:32]
 	Body      []byte    `json:"-"`
+}
+
+// Reset zeroes the GameEventMessage so it can be reused.
+func (m *GameEventMessage) Reset() {
+	*m = GameEventMessage{}
 }
 
 // IsMessage confirms a GameEventMessage is a Message.
@@ -151,6 +161,11 @@ type KeepaliveMessage struct {
 	GenericHeader
 	ID        uint32    `json:"ID"` // [16:20]
 	Timestamp time.Time `json:"-"`  // [20:24]
+}
+
+// Reset zeroes the KeepaliveMessage so it can be reused.
+func (m *KeepaliveMessage) Reset() {
+	*m = KeepaliveMessage{}
 }
 
 // IsMessage confirms a KeepaliveMessage is a Message.
